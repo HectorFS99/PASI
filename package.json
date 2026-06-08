@@ -1,0 +1,14 @@
+{
+  "name": "pasi",
+  "version": "0.0.1",
+  "private": true,
+  "description": "PASI - Plataforma de Apoio ao pré-diagnóstico (monorepo: API + mobile)",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "api:dev": "npm run start:dev --workspace apps/api",
+    "api:build": "npm run build --workspace apps/api",
+    "api:start": "npm run start:prod --workspace apps/api"
+  }
+}
