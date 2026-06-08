@@ -24,6 +24,21 @@ export const SituacaoFormulario = {
   RESPONDIDO: 2,
 } as const;
 
+/** tipo_pergunta (ordem da carga inicial do DDL). */
+export const TipoPergunta = {
+  TEXTO: 1,
+  NUMERO: 2,
+  BOOLEANO: 3,
+  ESCOLHA_UNICA: 4,
+  ESCOLHA_MULTIPLA: 5,
+} as const;
+
+/** Tipos de pergunta que exigem opções cadastradas. */
+export const TIPOS_COM_OPCOES: number[] = [
+  TipoPergunta.ESCOLHA_UNICA,
+  TipoPergunta.ESCOLHA_MULTIPLA,
+];
+
 /** Regex de senha: mín. 8 caracteres, 1 maiúscula, 1 minúscula, 1 número e 1 especial. */
 export const SENHA_REGEX =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
