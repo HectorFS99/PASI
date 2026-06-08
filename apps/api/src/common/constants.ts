@@ -7,6 +7,23 @@ export const TipoUsuario = {
   PACIENTE: 2,
 } as const;
 
+/** situacao_atendimento (ordem da carga inicial do DDL). */
+export const SituacaoAtendimento = {
+  CRIADO: 1,
+  INICIADO: 2,
+  RESPONDIDO: 3,
+  EM_AVALIACAO: 4,
+  AVALIADO: 5,
+  ENCERRADO: 6,
+  INATIVO: 7,
+} as const;
+
+/** situacao_formulario (ordem da carga inicial do DDL). */
+export const SituacaoFormulario = {
+  RASCUNHO: 1,
+  RESPONDIDO: 2,
+} as const;
+
 /** Regex de senha: mín. 8 caracteres, 1 maiúscula, 1 minúscula, 1 número e 1 especial. */
 export const SENHA_REGEX =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;

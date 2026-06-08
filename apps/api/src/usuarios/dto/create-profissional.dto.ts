@@ -1,9 +1,8 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 import {
   IsEmail,
   IsInt,
   IsNotEmpty,
-  IsOptional,
   IsString,
   Length,
   Matches,
@@ -44,15 +43,10 @@ export class CreateProfissionalDto {
   @IsInt()
   id_unidade_atendimento: number;
 
-  @ApiPropertyOptional({
-    example: 'F',
-    description:
-      "Sexo (1 caractere). O formulário do profissional não coleta sexo; se omitido será gravado como 'N'.",
-  })
-  @IsOptional()
+  @ApiProperty({ example: 'F', description: 'Sexo (1 caractere)' })
   @IsString()
   @Length(1, 1)
-  sexo?: string;
+  sexo: string;
 
   @ApiProperty({ example: 'Senha@123' })
   @Matches(SENHA_REGEX, { message: SENHA_MENSAGEM })

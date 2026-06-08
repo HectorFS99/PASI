@@ -24,7 +24,7 @@ export class UsuariosService {
       cpf: dto.cpf,
       email: dto.email.toLowerCase(),
       tel_celular: dto.tel_celular,
-      sexo: dto.sexo ?? 'N',
+      sexo: dto.sexo,
       senha_hash,
       profissao: { connect: { id_profissao: dto.id_profissao } },
       unidade_atendimento_usuario_id_unidade_atendimentoTounidade_atendimento: {
