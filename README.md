@@ -42,4 +42,3 @@ npm run api:dev
 ```
 
 A documentação Swagger fica em `http://localhost:3000/docs`.
-> caso contrário builds ficam lentos e arquivos podem corromper.
