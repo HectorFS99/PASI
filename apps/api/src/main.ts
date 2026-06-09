@@ -35,11 +35,11 @@ async function bootstrap() {
     .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup('docs', app, document);
+  SwaggerModule.setup('api/docs', app, document);
 
   const port = config.get<number>('PORT') ?? 3000;
   await app.listen(port);
   // eslint-disable-next-line no-console
-  console.log(`API rodando em http://localhost:${port}/api  (docs em /docs)`);
+  console.log(`API rodando em http://localhost:${port}/api  (docs em http://localhost:${port}/api/docs)`);
 }
 void bootstrap();
