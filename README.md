@@ -42,7 +42,4 @@ npm run api:dev
 ```
 
 A documentação Swagger fica em `http://localhost:3000/docs`.
-
-> ⚠️ **Google Drive:** este projeto está em uma pasta sincronizada. Configure o
-> Drive para **não** sincronizar `node_modules` (Preferências → "Ignorar arquivos"),
 > caso contrário builds ficam lentos e arquivos podem corromper.
