@@ -27,6 +27,9 @@ yarn-error.log*
 # Coverage / tests
 coverage/
 
+# Uploads (arquivos enviados em dev — disco local)
+apps/api/uploads/
+
 # OS / editor
 .DS_Store
 Thumbs.db

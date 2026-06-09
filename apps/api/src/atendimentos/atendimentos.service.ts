@@ -22,6 +22,7 @@ export class AtendimentosService {
   // ----------------------------------------------------------------
   async create(dto: CreateAtendimentoDto, user: AuthUser) {
     this.somenteProfissional(user);
+    await this.garantirFormulariosAtivos(dto.formularios);
 
     try {
       return await this.prisma.atendimento.create({
@@ -174,6 +175,8 @@ export class AtendimentosService {
       );
     }
 
+    await this.garantirFormulariosAtivos(novos);
+
     try {
       await this.prisma.atendimento_formulario.createMany({
         data: novos.map((id_formulario) => ({
@@ -271,6 +274,23 @@ export class AtendimentosService {
     if (user.tipo !== TipoUsuario.PROFISSIONAL) {
       throw new ForbiddenException(
         'Apenas usuários profissionais podem executar esta ação.',
+      );
+    }
+  }
+
+  // Formulários desativados não podem ser atribuídos a atendimentos.
+  private async garantirFormulariosAtivos(ids: number[]) {
+    if (ids.length === 0) return;
+    const inativos = await this.prisma.formulario.findMany({
+      where: { id_formulario: { in: ids }, ativo: false },
+      select: { id_formulario: true, nome: true },
+    });
+    if (inativos.length > 0) {
+      const nomes = inativos
+        .map((f) => f.nome ?? `#${f.id_formulario}`)
+        .join(', ');
+      throw new BadRequestException(
+        `Formulário(s) desativado(s) não podem ser atribuídos: ${nomes}.`,
       );
     }
   }

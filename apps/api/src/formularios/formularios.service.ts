@@ -112,6 +112,27 @@ export class FormulariosService {
     }
   }
 
+  // Desativar impede novas associações deste formulário a atendimentos.
+  async desativar(id: number, user: AuthUser) {
+    this.somenteProfissional(user);
+    await this.findOne(id);
+    return this.prisma.formulario.update({
+      where: { id_formulario: id },
+      data: { ativo: false },
+      include: this.includeDetalhe(),
+    });
+  }
+
+  async reativar(id: number, user: AuthUser) {
+    this.somenteProfissional(user);
+    await this.findOne(id);
+    return this.prisma.formulario.update({
+      where: { id_formulario: id },
+      data: { ativo: true },
+      include: this.includeDetalhe(),
+    });
+  }
+
   // ----------------------------------------------------------------
   // Perguntas
   // ----------------------------------------------------------------

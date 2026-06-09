@@ -58,6 +58,7 @@ model formulario {
   id_tipo_formulario     Int
   nome                   String?                  @db.VarChar(50)
   descricao              String?                  @db.VarChar(150)
+  ativo                  Boolean?                 @default(true)
   atendimento_formulario atendimento_formulario[]
   documentos             documentos[]
   tipo_formulario        tipo_formulario          @relation(fields: [id_tipo_formulario], references: [id_tipo_formulario], onDelete: NoAction, onUpdate: NoAction, map: "fk_form_tipoform")

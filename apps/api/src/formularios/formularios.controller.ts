@@ -55,6 +55,18 @@ export class FormulariosController {
     return this.formulariosService.update(id, dto, user);
   }
 
+  @Patch(':id/desativar')
+  @ApiOperation({ summary: 'Desativa o formulário (impede novas atribuições)' })
+  desativar(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: AuthUser) {
+    return this.formulariosService.desativar(id, user);
+  }
+
+  @Patch(':id/reativar')
+  @ApiOperation({ summary: 'Reativa um formulário desativado' })
+  reativar(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: AuthUser) {
+    return this.formulariosService.reativar(id, user);
+  }
+
   @Post(':id/perguntas')
   @ApiOperation({ summary: 'Adiciona uma pergunta (bloqueado se já respondido)' })
   addPergunta(
