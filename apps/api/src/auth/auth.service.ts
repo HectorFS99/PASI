@@ -1,8 +1,10 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { randomBytes } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { JwtPayload } from './jwt.strategy';
 
 @Injectable()
@@ -44,5 +46,30 @@ export class AuthService {
       access_token: await this.jwt.signAsync(payload),
       usuario: usuarioSemSenha,
     };
+  }
+
+  async esqueceuSenha(dto: ForgotPasswordDto) {
+    const usuario = await this.prisma.usuario.findUnique({
+      where: { email: dto.email.toLowerCase() },
+    });
+
+    // Responde sempre com sucesso — não revela se o e-mail existe (segurança)
+    if (!usuario) {
+      return { message: 'Se o e-mail estiver cadastrado, você receberá as instruções em breve.' };
+    }
+
+    const token = randomBytes(32).toString('hex');
+    const expira = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
+
+    await this.prisma.usuario.update({
+      where: { id_usuario: usuario.id_usuario },
+      data: { senha_reset_token: token, senha_reset_expira_em: expira },
+    });
+
+    // TODO: enviar e-mail com link de recuperação (configurar SMTP via env vars)
+    const link = `${process.env.APP_URL ?? 'http://localhost:3000'}/auth/redefinir-senha?token=${token}`;
+    console.log(`[reset-senha] link para ${usuario.email}: ${link}`);
+
+    return { message: 'Se o e-mail estiver cadastrado, você receberá as instruções em breve.' };
   }
 }

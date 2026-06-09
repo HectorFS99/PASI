@@ -39,6 +39,9 @@ export const TIPOS_COM_OPCOES: number[] = [
   TipoPergunta.ESCOLHA_MULTIPLA,
 ];
 
+/** ID fixo do formulário de Triagem Socioeconômica (carga inicial do DDL). */
+export const ID_FORMULARIO_TRIAGEM = 2;
+
 /** Regex de senha: mín. 8 caracteres, 1 maiúscula, 1 minúscula, 1 número e 1 especial. */
 export const SENHA_REGEX =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;

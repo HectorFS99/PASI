@@ -1,0 +1,97 @@
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  Image,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableOpacity,
+  Alert,
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { NavigationProp } from '../navigation/types';
+import { InputField } from '../components/InputField';
+import { PrimaryButton } from '../components/PrimaryButton';
+import { authService } from '../services/auth';
+
+export function EsqueceuSenhaScreen() {
+  const navigation = useNavigation<NavigationProp>();
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleEnviar = async () => {
+    if (!email.trim() || !email.includes('@')) {
+      setError('Informe um e-mail válido');
+      return;
+    }
+    setError('');
+    setLoading(true);
+    try {
+      await authService.esqueceuSenha(email.trim().toLowerCase());
+      Alert.alert(
+        'E-mail enviado',
+        'Se o e-mail estiver cadastrado, você receberá as instruções em breve.',
+        [{ text: 'OK', onPress: () => navigation.goBack() }],
+      );
+    } catch {
+      Alert.alert('Erro', 'Não foi possível processar a solicitação. Tente novamente.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <KeyboardAvoidingView
+      className="flex-1"
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView className="flex-1 bg-white" keyboardShouldPersistTaps="handled">
+        {/* Header */}
+        <View className="bg-primary px-6 pt-14 pb-8">
+          <TouchableOpacity onPress={() => navigation.goBack()} className="mb-4 self-start p-1">
+            <Text className="text-white text-2xl">←</Text>
+          </TouchableOpacity>
+          <View className="items-center">
+            <Image
+              source={require('../../assets/logo.png')}
+              style={{ width: 130, height: 130 }}
+              resizeMode="contain"
+            />
+          </View>
+        </View>
+
+        {/* Body */}
+        <View className="px-6 pt-8 pb-10">
+          <Text className="text-2xl font-bold text-primary mb-3">Esqueceu sua senha?</Text>
+          <Text className="text-primary text-sm leading-5 mb-8">
+            Não se preocupe. Digite seu e-mail abaixo e enviaremos instruções para redefinir sua
+            senha.
+          </Text>
+
+          <InputField
+            label="E-mail"
+            placeholder="Digite seu e-mail"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            error={error}
+            leftIcon={<Text className="text-muted text-base">✉</Text>}
+          />
+
+          <PrimaryButton
+            label="Enviar link de recuperação"
+            onPress={handleEnviar}
+            loading={loading}
+          />
+
+          <View className="mt-3">
+            <PrimaryButton label="Voltar" onPress={() => navigation.goBack()} variant="outlined" />
+          </View>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
+}

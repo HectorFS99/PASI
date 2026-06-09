@@ -6,7 +6,7 @@ import {
 import { Prisma } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
-import { TipoUsuario } from '../common/constants';
+import { ID_FORMULARIO_TRIAGEM, SituacaoAtendimento, TipoUsuario } from '../common/constants';
 import { CreateProfissionalDto } from './dto/create-profissional.dto';
 import { CreatePacienteDto } from './dto/create-paciente.dto';
 
@@ -35,28 +35,60 @@ export class UsuariosService {
 
   async createPaciente(dto: CreatePacienteDto) {
     const senha_hash = await bcrypt.hash(dto.senha, SALT_ROUNDS);
-    return this.criar({
-      tipo_usuario: { connect: { id_tipo_usuario: TipoUsuario.PACIENTE } },
-      nome: dto.nome,
-      cpf: dto.cpf,
-      email: dto.email.toLowerCase(),
-      tel_celular: dto.tel_celular,
-      sexo: dto.sexo,
-      dt_nascimento: dto.dt_nascimento ? new Date(dto.dt_nascimento) : null,
-      nac_estrangeira: dto.nac_estrangeira ?? false,
-      cep: dto.cep,
-      logradouro: dto.logradouro,
-      numero: dto.numero,
-      complemento: dto.complemento,
-      bairro: dto.bairro,
-      cidade: dto.cidade,
-      estado: dto.estado,
-      pais: dto.pais,
-      senha_hash,
-      ...(dto.id_genero
-        ? { genero: { connect: { id_genero: dto.id_genero } } }
-        : {}),
-    });
+
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        const usuario = await tx.usuario.create({
+          data: {
+            tipo_usuario: { connect: { id_tipo_usuario: TipoUsuario.PACIENTE } },
+            nome: dto.nome,
+            cpf: dto.cpf,
+            email: dto.email.toLowerCase(),
+            tel_celular: dto.tel_celular,
+            sexo: dto.sexo,
+            dt_nascimento: dto.dt_nascimento ? new Date(dto.dt_nascimento) : null,
+            nac_estrangeira: dto.nac_estrangeira ?? false,
+            cep: dto.cep,
+            logradouro: dto.logradouro,
+            numero: dto.numero,
+            complemento: dto.complemento,
+            bairro: dto.bairro,
+            cidade: dto.cidade,
+            estado: dto.estado,
+            pais: dto.pais,
+            senha_hash,
+            ...(dto.id_genero
+              ? { genero: { connect: { id_genero: dto.id_genero } } }
+              : {}),
+          },
+        });
+
+        await tx.atendimento.create({
+          data: {
+            id_usuario_paciente: usuario.id_usuario,
+            id_situacao_atendimento: SituacaoAtendimento.CRIADO,
+            atendimento_formulario: {
+              create: { id_formulario: ID_FORMULARIO_TRIAGEM },
+            },
+          },
+        });
+
+        return this.semSenha(usuario);
+      });
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+        const campo = (e.meta?.target as string) ?? 'campo único';
+        throw new ConflictException(
+          `Já existe um usuário com este ${this.nomeCampoConflito(campo)}.`,
+        );
+      }
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2025') {
+        throw new ConflictException(
+          'Profissão ou unidade de atendimento informada não existe.',
+        );
+      }
+      throw e;
+    }
   }
 
   async findById(id: number) {

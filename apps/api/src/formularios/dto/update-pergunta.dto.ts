@@ -15,7 +15,7 @@ export class UpdatePerguntaDto {
   @ApiPropertyOptional({ example: 'Texto revisado da pergunta' })
   @IsOptional()
   @IsString()
-  @MaxLength(150)
+  @MaxLength(500)
   pergunta?: string;
 
   @ApiPropertyOptional({ example: 4 })

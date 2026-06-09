@@ -57,7 +57,7 @@ model formulario {
   id_formulario          Int                      @id @default(autoincrement())
   id_tipo_formulario     Int
   nome                   String?                  @db.VarChar(50)
-  descricao              String?                  @db.VarChar(150)
+  descricao              String?                  @db.VarChar(500)
   ativo                  Boolean?                 @default(true)
   atendimento_formulario atendimento_formulario[]
   documentos             documentos[]
@@ -138,7 +138,7 @@ model opcao_pergunta {
 model pergunta {
   id_pergunta      Int              @id @default(autoincrement())
   id_tipo_pergunta Int              @db.SmallInt
-  pergunta         String           @db.VarChar(150)
+  pergunta         String           @db.VarChar(500)
   valor_minimo     Int?
   valor_maximo     Int?
   obrigatoria      Boolean?         @default(true)
@@ -270,6 +270,8 @@ model usuario {
   estado                                                                  String?                  @db.Char(2)
   pais                                                                    String?                  @db.VarChar(50)
   senha_hash                                                              String?                  @db.VarChar(255)
+  senha_reset_token                                                       String?                  @unique @db.VarChar(64)
+  senha_reset_expira_em                                                   DateTime?                @db.Timestamp(6)
   id_profissao                                                            Int?
   id_unidade_atendimento                                                  Int?
   dt_cadastro                                                             DateTime?                @default(now()) @db.Timestamp(6)

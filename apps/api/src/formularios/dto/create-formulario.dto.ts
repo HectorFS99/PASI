@@ -24,7 +24,7 @@ export class CreateFormularioDto {
   @ApiPropertyOptional({ example: 'Ficha baseada nos exemplares de pré-diagnóstico' })
   @IsOptional()
   @IsString()
-  @MaxLength(150)
+  @MaxLength(500)
   descricao?: string;
 
   @ApiPropertyOptional({

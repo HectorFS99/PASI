@@ -16,7 +16,7 @@ export class CreatePerguntaDto {
   @ApiProperty({ example: 'A criança costuma se preocupar demais com o futuro?' })
   @IsString()
   @IsNotEmpty()
-  @MaxLength(150)
+  @MaxLength(500)
   pergunta: string;
 
   @ApiProperty({

@@ -2,6 +2,7 @@ import { Body, Controller, Get, HttpCode, HttpStatus, Post, UseGuards } from '@n
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { CurrentUser, type AuthUser } from './current-user.decorator';
 
@@ -15,6 +16,13 @@ export class AuthController {
   @ApiOperation({ summary: 'Autentica por e-mail OU CPF + senha e retorna um JWT' })
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
+  }
+
+  @Post('esqueceu-senha')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Solicita link de recuperação de senha por e-mail' })
+  esqueceuSenha(@Body() dto: ForgotPasswordDto) {
+    return this.authService.esqueceuSenha(dto);
   }
 
   @Get('me')

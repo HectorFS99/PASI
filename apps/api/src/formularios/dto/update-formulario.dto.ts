@@ -16,6 +16,6 @@ export class UpdateFormularioDto {
   @ApiPropertyOptional({ example: 'Nova descrição' })
   @IsOptional()
   @IsString()
-  @MaxLength(150)
+  @MaxLength(500)
   descricao?: string;
 }
