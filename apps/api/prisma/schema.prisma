@@ -59,6 +59,7 @@ model formulario {
   nome                   String?                  @db.VarChar(50)
   descricao              String?                  @db.VarChar(500)
   ativo                  Boolean?                 @default(true)
+  dt_cadastro            DateTime?                @default(now()) @db.Timestamp(6)
   atendimento_formulario atendimento_formulario[]
   documentos             documentos[]
   tipo_formulario        tipo_formulario          @relation(fields: [id_tipo_formulario], references: [id_tipo_formulario], onDelete: NoAction, onUpdate: NoAction, map: "fk_form_tipoform")

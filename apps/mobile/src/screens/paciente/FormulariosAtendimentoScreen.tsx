@@ -8,6 +8,7 @@ import {
   Alert,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { PacienteNavProp, PacienteStackParamList } from '../../navigation/types';
 import { StatusBadge } from '../../components/StatusBadge';
 import { atendimentosService, Atendimento, AtendimentoFormulario } from '../../services/atendimentos';
@@ -15,19 +16,14 @@ import { formulariosService } from '../../services/formularios';
 import { formatProtocolo } from '../../utils/format';
 
 type RouteT = RouteProp<PacienteStackParamList, 'FormulariosAtendimento'>;
+type IconName = keyof typeof MaterialIcons.glyphMap;
 
-const ICONS: Record<string, string> = {
-  cras: '🏘️',
-  caps: '💚',
-  creas: '⚖️',
-};
-
-function iconeFormulario(nome?: string): string {
+function iconeFormulario(nome?: string): IconName {
   const n = (nome ?? '').toLowerCase();
-  if (n.includes('cras') || n.includes('socioecon') || n.includes('triagem')) return '🏘️';
-  if (n.includes('caps') || n.includes('mental') || n.includes('saúde')) return '💚';
-  if (n.includes('creas') || n.includes('violação') || n.includes('direito')) return '⚖️';
-  return '📋';
+  if (n.includes('cras') || n.includes('socioecon') || n.includes('triagem')) return 'home';
+  if (n.includes('caps') || n.includes('mental') || n.includes('saúde')) return 'favorite';
+  if (n.includes('creas') || n.includes('violação') || n.includes('direito')) return 'balance';
+  return 'assignment';
 }
 
 export function FormulariosAtendimentoScreen() {
@@ -84,7 +80,7 @@ export function FormulariosAtendimentoScreen() {
       {/* Header */}
       <View className="bg-primary px-6 pt-14 pb-5">
         <TouchableOpacity onPress={() => navigation.goBack()} className="mb-3 self-start">
-          <Text className="text-white text-2xl">←</Text>
+          <MaterialIcons name="arrow-back" size={24} color="white" />
         </TouchableOpacity>
         <Text className="text-white text-xl font-bold">Formulários</Text>
         <Text className="text-white/70 text-sm">
@@ -114,14 +110,13 @@ export function FormulariosAtendimentoScreen() {
         {formularios.map((af) => {
           const situacaoId = af.status_formulario_paciente?.id_situacao_formulario ?? 1;
           const respondido = situacaoId === 2;
-          const iniciado = !!af.status_formulario_paciente;
-          const icon = iconeFormulario(af.formulario.nome);
+          const iconName = iconeFormulario(af.formulario.nome);
 
           return (
             <View key={af.id_atendimento_formulario} className="bg-white border border-border rounded-2xl p-4 mb-3" style={{ elevation: 1 }}>
               <View className="flex-row items-center mb-3">
                 <View className="w-12 h-12 rounded-xl bg-primary/10 items-center justify-center mr-3">
-                  <Text className="text-2xl">{icon}</Text>
+                  <MaterialIcons name={iconName} size={26} color="#0D2347" />
                 </View>
                 <View className="flex-1">
                   <Text className="text-sm font-semibold text-gray-800">{af.formulario.nome}</Text>

@@ -8,6 +8,7 @@ import {
   Alert,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { ProfissionalNavProp, ProfissionalStackParamList } from '../../navigation/types';
 import { StatusBadge } from '../../components/StatusBadge';
 import { atendimentosService, Atendimento } from '../../services/atendimentos';
@@ -49,8 +50,9 @@ export function DetalhesAtendimentoScreen() {
     <View className="flex-1 bg-white">
       {/* Header */}
       <View className="bg-primary px-6 pt-14 pb-5">
-        <TouchableOpacity onPress={() => navigation.goBack()} className="mb-3 self-start">
-          <Text className="text-white text-2xl">← Detalhes do Atendimento</Text>
+        <TouchableOpacity onPress={() => navigation.goBack()} className="mb-3 self-start flex-row items-center gap-2">
+          <MaterialIcons name="arrow-back" size={24} color="white" />
+          <Text className="text-white text-lg font-bold">Detalhes do Atendimento</Text>
         </TouchableOpacity>
       </View>
 
@@ -67,7 +69,7 @@ export function DetalhesAtendimentoScreen() {
         <Text className="text-base font-bold text-primary mb-4">Informações do Atendimento</Text>
 
         <View className="flex-row items-start mb-4">
-          <Text className="text-lg mr-3">📄</Text>
+          <MaterialIcons name="description" size={22} color="#6B7280" style={{ marginRight: 12, marginTop: 2 }} />
           <View className="flex-1">
             <Text className="text-xs text-muted font-medium mb-0.5">Descrição</Text>
             <Text className="text-sm text-gray-800">{atendimento.descricao ?? '—'}</Text>
@@ -75,7 +77,7 @@ export function DetalhesAtendimentoScreen() {
         </View>
 
         <View className="flex-row items-start mb-4">
-          <Text className="text-lg mr-3">👤</Text>
+          <MaterialIcons name="person" size={22} color="#6B7280" style={{ marginRight: 12, marginTop: 2 }} />
           <View className="flex-1">
             <Text className="text-xs text-muted font-medium mb-0.5">Paciente</Text>
             <Text className="text-sm text-gray-800 font-medium">{paciente.nome}</Text>
@@ -84,7 +86,7 @@ export function DetalhesAtendimentoScreen() {
         </View>
 
         <View className="flex-row items-start mb-6">
-          <Text className="text-lg mr-3">📅</Text>
+          <MaterialIcons name="event" size={22} color="#6B7280" style={{ marginRight: 12, marginTop: 2 }} />
           <View className="flex-1">
             <Text className="text-xs text-muted font-medium mb-0.5">Data de criação</Text>
             <Text className="text-sm text-gray-800">{formatData(atendimento.dt_cadastro)}</Text>
@@ -103,7 +105,7 @@ export function DetalhesAtendimentoScreen() {
           return (
             <View key={af.id_atendimento_formulario} className="bg-white border border-border rounded-2xl p-4 mb-3" style={{ elevation: 1 }}>
               <View className="flex-row items-start justify-between mb-3">
-                <Text className="text-lg mr-2">📋</Text>
+                <MaterialIcons name="assignment" size={22} color="#4A5568" style={{ marginRight: 8, marginTop: 2 }} />
                 <View className="flex-1 mr-2">
                   <Text className="text-sm font-semibold text-gray-800">{af.formulario.nome}</Text>
                   <Text className="text-xs text-muted mt-0.5" numberOfLines={2}>

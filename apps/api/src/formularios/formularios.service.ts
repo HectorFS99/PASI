@@ -66,13 +66,6 @@ export class FormulariosService {
     if (query.ativo !== undefined) {
       where.ativo = query.ativo;
     }
-    if (query.data_inicio || query.data_fim) {
-      where.dt_cadastro = {
-        ...(query.data_inicio ? { gte: new Date(query.data_inicio) } : {}),
-        ...(query.data_fim ? { lte: new Date(`${query.data_fim}T23:59:59.999Z`) } : {}),
-      };
-    }
-
     type OrderBy = Prisma.formularioOrderByWithRelationInput;
     const orderByMap: Record<string, OrderBy> = {
       [OrdenarFormularioPor.DATA_DESC]: { id_formulario: 'desc' },

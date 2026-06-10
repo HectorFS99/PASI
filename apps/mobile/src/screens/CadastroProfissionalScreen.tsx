@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { useNavigation } from '@react-navigation/native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { NavigationProp } from '../navigation/types';
 import { StepIndicator } from '../components/StepIndicator';
 import { InputField } from '../components/InputField';
@@ -116,7 +117,7 @@ export function CadastroProfissionalScreen() {
         {/* Header */}
         <View className="bg-primary px-6 pt-14 pb-4">
           <TouchableOpacity onPress={() => navigation.goBack()} className="mb-3 self-start p-1">
-            <Text className="text-white text-2xl">←</Text>
+            <MaterialIcons name="arrow-back" size={24} color="white" />
           </TouchableOpacity>
           <Text className="text-white text-xl font-bold">Cadastro Profissional</Text>
           <Text className="text-white/70 text-sm">Preencha seus dados para criar sua conta</Text>
@@ -217,9 +218,10 @@ export function CadastroProfissionalScreen() {
                 <View className="mb-4" />
               )}
 
-              <View className="bg-info-bg border border-info-border rounded-xl p-4 mb-6">
-                <Text className="text-info-text text-xs leading-relaxed">
-                  ℹ️ O ID de Acesso institucional concede privilégios de nível Máximo ou
+              <View className="bg-info-bg border border-info-border rounded-xl p-4 mb-6 flex-row items-start">
+                <MaterialIcons name="info-outline" size={16} color="#2B6CB0" style={{ marginRight: 8, marginTop: 1 }} />
+                <Text className="text-info-text text-xs leading-relaxed flex-1">
+                  O ID de Acesso institucional concede privilégios de nível Máximo ou
                   Intermediário conforme sua categoria profissional.
                 </Text>
               </View>

@@ -13,6 +13,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { ProfissionalNavProp } from '../../navigation/types';
 import { PrimaryButton } from '../../components/PrimaryButton';
+import { MaterialIcons } from '@expo/vector-icons';
 import { atendimentosService, Paciente } from '../../services/atendimentos';
 import { formulariosService, FormularioItem } from '../../services/formularios';
 
@@ -84,7 +85,7 @@ export function NovoAtendimentoScreen() {
         {/* Header */}
         <View className="bg-primary px-6 pt-14 pb-5">
           <TouchableOpacity onPress={() => navigation.goBack()} className="mb-3 self-start">
-            <Text className="text-white text-2xl">←</Text>
+            <MaterialIcons name="arrow-back" size={24} color="white" />
           </TouchableOpacity>
           <Text className="text-white text-xl font-bold">Novo Atendimento</Text>
           <Text className="text-white/70 text-sm">Preencha os dados do atendimento</Text>
@@ -132,7 +133,10 @@ export function NovoAtendimentoScreen() {
           )}
           {pacienteSelecionado && !showPacientes && (
             <View className="bg-success-bg border border-success-border rounded-xl px-4 py-2 mb-4">
-              <Text className="text-success-text text-xs">✓ {pacienteSelecionado.nome}</Text>
+              <View className="flex-row items-center gap-1">
+                <MaterialIcons name="check" size={14} color="#276749" />
+                <Text className="text-success-text text-xs">{pacienteSelecionado.nome}</Text>
+              </View>
             </View>
           )}
 
@@ -154,7 +158,7 @@ export function NovoAtendimentoScreen() {
                 className={`flex-row items-start p-4 rounded-xl mb-2 border ${sel ? 'bg-primary/5 border-primary' : 'bg-white border-border'}`}
               >
                 <View className={`w-5 h-5 rounded border-2 mr-3 mt-0.5 items-center justify-center ${sel ? 'bg-primary border-primary' : 'bg-white border-border'}`}>
-                  {sel && <Text className="text-white text-xs">✓</Text>}
+                  {sel && <MaterialIcons name="check" size={12} color="white" />}
                 </View>
                 <View className="flex-1">
                   <Text className="text-xs text-primary font-semibold mb-0.5">

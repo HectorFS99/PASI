@@ -1,12 +1,13 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { NavigationProp } from '../navigation/types';
 
 interface CardProps {
   title: string;
   description: string;
-  icon: string;
+  icon: React.ReactNode;
   onPress: () => void;
 }
 
@@ -18,13 +19,13 @@ function ProfileCard({ title, description, icon, onPress }: CardProps) {
       style={{ elevation: 2 }}
     >
       <View className="w-12 h-12 rounded-xl bg-primary/10 items-center justify-center mr-4">
-        <Text className="text-2xl">{icon}</Text>
+        {icon}
       </View>
       <View className="flex-1">
         <Text className="text-primary font-semibold text-base">{title}</Text>
         <Text className="text-muted text-xs mt-0.5">{description}</Text>
       </View>
-      <Text className="text-muted text-lg">›</Text>
+      <MaterialIcons name="chevron-right" size={20} color="#A0AEC0" />
     </TouchableOpacity>
   );
 }
@@ -44,26 +45,26 @@ export function SelectProfileScreen() {
       </View>
 
       <View className="px-6 pt-8">
-      <Text className="text-2xl font-bold text-primary text-center mb-1">
-        Selecione seu perfil
-      </Text>
-      <Text className="text-muted text-sm text-center mb-8">
-        Como você deseja acessar a plataforma?
-      </Text>
+        <Text className="text-2xl font-bold text-primary text-center mb-1">
+          Selecione seu perfil
+        </Text>
+        <Text className="text-muted text-sm text-center mb-8">
+          Como você deseja acessar a plataforma?
+        </Text>
 
-      <ProfileCard
-        title="Sou profissional"
-        description="Cadastre-se como profissional e tenha acesso às ferramentas de atendimento."
-        icon="💼"
-        onPress={() => navigation.navigate('CadastroProfissional')}
-      />
+        <ProfileCard
+          title="Sou profissional"
+          description="Cadastre-se como profissional e tenha acesso às ferramentas de atendimento."
+          icon={<MaterialIcons name="work" size={26} color="#0D2347" />}
+          onPress={() => navigation.navigate('CadastroProfissional')}
+        />
 
-      <ProfileCard
-        title="Sou paciente"
-        description="Cadastre-se como paciente e acompanhe seus atendimentos e formulários."
-        icon="👤"
-        onPress={() => navigation.navigate('CadastroPaciente')}
-      />
+        <ProfileCard
+          title="Sou paciente"
+          description="Cadastre-se como paciente e acompanhe seus atendimentos e formulários."
+          icon={<MaterialIcons name="person" size={26} color="#0D2347" />}
+          onPress={() => navigation.navigate('CadastroPaciente')}
+        />
       </View>
     </View>
   );

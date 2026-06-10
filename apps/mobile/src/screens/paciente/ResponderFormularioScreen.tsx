@@ -13,6 +13,7 @@ import {
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { PacienteNavProp, PacienteStackParamList } from '../../navigation/types';
 import { PrimaryButton } from '../../components/PrimaryButton';
+import { MaterialIcons } from '@expo/vector-icons';
 import { formulariosService, Pergunta, RespostaItem, DetalheFormulario } from '../../services/formularios';
 
 type RouteT = RouteProp<PacienteStackParamList, 'ResponderFormulario'>;
@@ -162,8 +163,9 @@ export function ResponderFormularioScreen() {
     <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       {/* Header com progresso */}
       <View className="bg-primary px-6 pt-14 pb-4">
-        <TouchableOpacity onPress={() => navigation.goBack()} className="mb-2 self-start">
-          <Text className="text-white text-base">← {nomeFormulario}</Text>
+        <TouchableOpacity onPress={() => navigation.goBack()} className="mb-2 self-start flex-row items-center gap-1.5">
+          <MaterialIcons name="arrow-back" size={20} color="white" />
+          <Text className="text-white text-base">{nomeFormulario}</Text>
         </TouchableOpacity>
         <Text className="text-white/70 text-xs mb-2">
           {respondidas} de {perguntas.length} respondidas
@@ -275,9 +277,10 @@ export function ResponderFormularioScreen() {
         )}
         {concluido && (
           <View className="bg-success-bg border border-success-border rounded-xl p-4 mt-4">
-            <Text className="text-success-text text-sm text-center font-medium">
-              ✓ Formulário enviado — obrigado!
-            </Text>
+            <View className="flex-row items-center justify-center gap-1.5">
+              <MaterialIcons name="check-circle" size={16} color="#276749" />
+              <Text className="text-success-text text-sm font-medium">Formulário enviado — obrigado!</Text>
+            </View>
           </View>
         )}
       </ScrollView>

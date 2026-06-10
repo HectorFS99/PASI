@@ -15,6 +15,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { ProfissionalNavProp, ProfissionalStackParamList } from '../../navigation/types';
 import { StatusBadge } from '../../components/StatusBadge';
 import { PrimaryButton } from '../../components/PrimaryButton';
+import { MaterialIcons } from '@expo/vector-icons';
 import { atendimentosService, Atendimento } from '../../services/atendimentos';
 import { formulariosService, FormularioItem } from '../../services/formularios';
 import { formatProtocolo } from '../../utils/format';
@@ -126,7 +127,7 @@ export function EditarAtendimentoScreen() {
         {/* Header */}
         <View className="bg-primary px-6 pt-14 pb-5">
           <TouchableOpacity onPress={() => navigation.goBack()} className="mb-3 self-start">
-            <Text className="text-white text-2xl">←</Text>
+            <MaterialIcons name="arrow-back" size={24} color="white" />
           </TouchableOpacity>
           <View className="flex-row items-center gap-2">
             <Text className="text-white text-xl font-bold">Editar Atendimento</Text>
@@ -189,7 +190,7 @@ export function EditarAtendimentoScreen() {
                     <StatusBadge status={situacaoId} variant="formulario" />
                     {isCriado && (
                       <TouchableOpacity onPress={() => removerFormulario(af.id_formulario)}>
-                        <Text className="text-red-400 text-lg">×</Text>
+                        <MaterialIcons name="close" size={18} color="#F87171" />
                       </TouchableOpacity>
                     )}
                   </View>
@@ -235,7 +236,7 @@ export function EditarAtendimentoScreen() {
                 <Text className="text-xs text-muted">Selecione formulários para vincular</Text>
               </View>
               <TouchableOpacity onPress={() => setModalVisible(false)}>
-                <Text className="text-gray-400 text-xl">×</Text>
+                <MaterialIcons name="close" size={22} color="#9CA3AF" />
               </TouchableOpacity>
             </View>
 
@@ -262,13 +263,13 @@ export function EditarAtendimentoScreen() {
                     }}
                     className={`flex-row items-center p-3 rounded-xl mb-2 border ${sel ? 'bg-primary/5 border-primary' : 'border-border'}`}
                   >
-                    <Text className="text-lg mr-3">📋</Text>
+                    <MaterialIcons name="assignment" size={22} color="#4A5568" style={{ marginRight: 12 }} />
                     <View className="flex-1">
                       <Text className="text-xs text-primary font-semibold">{f.tipo_formulario?.nome ?? 'Geral'}</Text>
                       <Text className="text-sm text-gray-800">{f.nome}</Text>
                       <Text className="text-xs text-muted" numberOfLines={1}>{f.descricao}</Text>
                     </View>
-                    {sel && <Text className="text-primary font-bold">✓</Text>}
+                    {sel && <MaterialIcons name="check" size={18} color="#0D2347" />}
                   </TouchableOpacity>
                 );
               })}

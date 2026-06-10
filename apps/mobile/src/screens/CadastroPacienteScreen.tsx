@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { useNavigation } from '@react-navigation/native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { NavigationProp } from '../navigation/types';
 import { StepIndicator } from '../components/StepIndicator';
 import { InputField } from '../components/InputField';
@@ -91,7 +92,6 @@ export function CadastroPacienteScreen() {
 
     setLoading(true);
     try {
-      // Converter dtNascimento de dd/mm/aaaa para yyyy-mm-dd
       let dtFormatted: string | undefined;
       if (dtNascimento.length === 10) {
         const [d, m, y] = dtNascimento.split('/');
@@ -139,7 +139,7 @@ export function CadastroPacienteScreen() {
         {/* Header */}
         <View className="bg-primary px-6 pt-14 pb-4">
           <TouchableOpacity onPress={() => navigation.goBack()} className="mb-3 self-start p-1">
-            <Text className="text-white text-2xl">←</Text>
+            <MaterialIcons name="arrow-back" size={24} color="white" />
           </TouchableOpacity>
           <Text className="text-white text-xl font-bold">Cadastro Paciente</Text>
           <Text className="text-white/70 text-sm">Preencha seus dados pessoais</Text>
@@ -246,7 +246,7 @@ export function CadastroPacienteScreen() {
                     nacEstrangeira ? 'bg-primary border-primary' : 'bg-white border-border'
                   }`}
                 >
-                  {nacEstrangeira && <Text className="text-white text-xs">✓</Text>}
+                  {nacEstrangeira && <MaterialIcons name="check" size={12} color="white" />}
                 </View>
                 <Text className="text-sm text-gray-700">Nacionalidade estrangeira</Text>
               </TouchableOpacity>
@@ -323,9 +323,10 @@ export function CadastroPacienteScreen() {
           {/* ── Step 3: Acesso ── */}
           {step === 3 && (
             <>
-              <View className="bg-success-bg border border-success-border rounded-xl p-4 mb-6">
-                <Text className="text-success-text text-xs leading-relaxed">
-                  ℹ️ Você receberá nível de acesso <Text className="font-bold">Mínimo</Text> —
+              <View className="bg-success-bg border border-success-border rounded-xl p-4 mb-6 flex-row items-start">
+                <MaterialIcons name="info-outline" size={16} color="#276749" style={{ marginRight: 8, marginTop: 1 }} />
+                <Text className="text-success-text text-xs leading-relaxed flex-1">
+                  Você receberá nível de acesso <Text className="font-bold">Mínimo</Text> —
                   poderá visualizar e responder seus próprios formulários de atendimento.
                 </Text>
               </View>

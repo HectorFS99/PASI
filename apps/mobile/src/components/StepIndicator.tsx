@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 
 interface Props {
   steps: string[];
@@ -25,7 +26,7 @@ export function StepIndicator({ steps, current }: Props) {
                 }`}
               >
                 {isCompleted ? (
-                  <Text className="text-white text-sm font-bold">✓</Text>
+                  <MaterialIcons name="check" size={14} color="white" />
                 ) : (
                   <Text
                     className={`text-sm font-semibold ${

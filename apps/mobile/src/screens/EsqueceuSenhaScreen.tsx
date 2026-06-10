@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NavigationProp } from '../navigation/types';
+import { MaterialIcons } from '@expo/vector-icons';
 import { InputField } from '../components/InputField';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { authService } from '../services/auth';
@@ -51,7 +52,7 @@ export function EsqueceuSenhaScreen() {
         {/* Header */}
         <View className="bg-primary px-6 pt-14 pb-8">
           <TouchableOpacity onPress={() => navigation.goBack()} className="mb-4 self-start p-1">
-            <Text className="text-white text-2xl">←</Text>
+            <MaterialIcons name="arrow-back" size={24} color="white" />
           </TouchableOpacity>
           <View className="items-center">
             <Image
@@ -78,7 +79,7 @@ export function EsqueceuSenhaScreen() {
             keyboardType="email-address"
             autoCapitalize="none"
             error={error}
-            leftIcon={<Text className="text-muted text-base">✉</Text>}
+            leftIcon={<MaterialIcons name="email" size={18} color="#A0AEC0" />}
           />
 
           <PrimaryButton

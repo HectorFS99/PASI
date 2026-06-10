@@ -10,6 +10,7 @@ import {
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { ProfissionalNavProp, ProfissionalStackParamList } from '../../navigation/types';
 import { formulariosAdminService, FormularioAdmin, PerguntaAdmin } from '../../services/formularios';
+import { MaterialIcons } from '@expo/vector-icons';
 import { formatData } from '../../utils/format';
 
 type RouteT = RouteProp<ProfissionalStackParamList, 'DetalhesFormulario'>;
@@ -113,7 +114,7 @@ export function DetalhesFormularioScreen() {
       {/* Header */}
       <View className="bg-primary px-6 pt-14 pb-5">
         <TouchableOpacity onPress={() => navigation.goBack()} className="mb-3 self-start">
-          <Text className="text-white text-2xl">←</Text>
+          <MaterialIcons name="arrow-back" size={24} color="white" />
         </TouchableOpacity>
         <Text className="text-white text-lg font-bold">Visualizar Formulário</Text>
       </View>
@@ -123,7 +124,7 @@ export function DetalhesFormularioScreen() {
         <View className="bg-white border border-border rounded-2xl p-4 mb-5" style={{ elevation: 1 }}>
           <View className="flex-row items-start">
             <View className="w-12 h-12 rounded-xl bg-primary/10 items-center justify-center mr-3">
-              <Text className="text-2xl">📋</Text>
+              <MaterialIcons name="assignment" size={28} color="#0D2347" />
             </View>
             <View className="flex-1">
               <Text className="text-primary font-bold text-base">{formulario.nome}</Text>

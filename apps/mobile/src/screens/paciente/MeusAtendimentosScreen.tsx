@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { PacienteNavProp } from '../../navigation/types';
 import { StatusBadge } from '../../components/StatusBadge';
 import { atendimentosService, Atendimento } from '../../services/atendimentos';
@@ -76,10 +77,11 @@ export function MeusAtendimentosScreen() {
                 descricao: item.descricao ?? 'Atendimento',
               })
             }
-            className="bg-green-500 rounded-xl py-3 items-center"
+            className="bg-green-500 rounded-xl py-3 flex-row items-center justify-center gap-1.5"
           >
+            <MaterialIcons name="edit" size={16} color="white" />
             <Text className="text-white text-sm font-semibold">
-              ✏ Responder formulários ({count})
+              Responder formulários ({count})
             </Text>
           </TouchableOpacity>
         ) : (
@@ -105,7 +107,7 @@ export function MeusAtendimentosScreen() {
       <View className="bg-primary px-5 pt-14 pb-5">
         <View className="flex-row items-center gap-3 mb-3">
           <View className="w-10 h-10 rounded-full bg-white/20 items-center justify-center">
-            <Text className="text-white text-base">👤</Text>
+            <MaterialIcons name="person" size={22} color="white" />
           </View>
           <View className="flex-1">
             <Text className="text-white/70 text-xs">Olá,</Text>
@@ -122,7 +124,7 @@ export function MeusAtendimentosScreen() {
           Acompanhe seus atendimentos e responda formulários
         </Text>
         <View className="flex-row items-center bg-white/15 rounded-xl px-3 h-10">
-          <Text className="text-white/60 mr-2">🔍</Text>
+          <MaterialIcons name="search" size={18} color="rgba(255,255,255,0.6)" style={{ marginRight: 8 }} />
           <TextInput
             className="flex-1 text-white text-sm"
             placeholder="Buscar atendimento..."
@@ -146,7 +148,7 @@ export function MeusAtendimentosScreen() {
           ListHeaderComponent={
             temPendentes ? (
               <TouchableOpacity className="flex-row items-center bg-orange-50 border border-orange-200 rounded-2xl p-4 mb-4">
-                <Text className="text-xl mr-3">📋</Text>
+                <MaterialIcons name="assignment" size={24} color="#C05621" style={{ marginRight: 12 }} />
                 <View>
                   <Text className="text-orange-700 font-semibold text-sm">Formulários pendentes</Text>
                   <Text className="text-orange-500 text-xs">Você possui formulários para preencher</Text>
@@ -160,14 +162,22 @@ export function MeusAtendimentosScreen() {
           ListFooterComponent={
             totalPages > 1 ? (
               <View className="flex-row items-center justify-center gap-4 mt-2">
-                <TouchableOpacity disabled={page <= 1} onPress={() => load(page - 1)}
-                  className={`px-4 py-2 rounded-xl border ${page <= 1 ? 'border-gray-200' : 'border-primary'}`}>
-                  <Text className={page <= 1 ? 'text-gray-300 text-sm' : 'text-primary text-sm'}>← Anterior</Text>
+                <TouchableOpacity
+                  disabled={page <= 1}
+                  onPress={() => load(page - 1)}
+                  className={`flex-row items-center gap-1 px-4 py-2 rounded-xl border ${page <= 1 ? 'border-gray-200' : 'border-primary'}`}
+                >
+                  <MaterialIcons name="chevron-left" size={16} color={page <= 1 ? '#D1D5DB' : '#0D2347'} />
+                  <Text className={page <= 1 ? 'text-gray-300 text-sm' : 'text-primary text-sm'}>Anterior</Text>
                 </TouchableOpacity>
                 <Text className="text-muted text-sm">{page}/{totalPages}</Text>
-                <TouchableOpacity disabled={page >= totalPages} onPress={() => load(page + 1)}
-                  className={`px-4 py-2 rounded-xl border ${page >= totalPages ? 'border-gray-200' : 'border-primary'}`}>
-                  <Text className={page >= totalPages ? 'text-gray-300 text-sm' : 'text-primary text-sm'}>Próximo →</Text>
+                <TouchableOpacity
+                  disabled={page >= totalPages}
+                  onPress={() => load(page + 1)}
+                  className={`flex-row items-center gap-1 px-4 py-2 rounded-xl border ${page >= totalPages ? 'border-gray-200' : 'border-primary'}`}
+                >
+                  <Text className={page >= totalPages ? 'text-gray-300 text-sm' : 'text-primary text-sm'}>Próximo</Text>
+                  <MaterialIcons name="chevron-right" size={16} color={page >= totalPages ? '#D1D5DB' : '#0D2347'} />
                 </TouchableOpacity>
               </View>
             ) : null

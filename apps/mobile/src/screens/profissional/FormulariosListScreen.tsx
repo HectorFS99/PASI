@@ -12,6 +12,7 @@ import {
   Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { ProfissionalNavProp } from '../../navigation/types';
 import {
   formulariosAdminService,
@@ -236,14 +237,14 @@ export function FormulariosListScreen() {
             }
             className="w-9 h-9 rounded-full bg-green-500 items-center justify-center"
           >
-            <Text className="text-white font-bold text-lg">+</Text>
+            <MaterialIcons name="add" size={22} color="white" />
           </TouchableOpacity>
         </View>
 
         {/* Busca + Filtros */}
         <View className="flex-row items-center gap-2 mt-3">
           <View className="flex-1 flex-row items-center bg-white/15 rounded-xl px-3 h-10">
-            <Text className="text-white/60 mr-2">🔍</Text>
+            <MaterialIcons name="search" size={18} color="rgba(255,255,255,0.6)" style={{ marginRight: 8 }} />
             <TextInput
               className="flex-1 text-white text-sm"
               placeholder="Buscar formulário..."
@@ -259,7 +260,7 @@ export function FormulariosListScreen() {
             }}
             className={`w-10 h-10 rounded-xl items-center justify-center ${filtrosAtivos ? 'bg-green-500' : 'bg-white/15'}`}
           >
-            <Text className="text-white text-base">⊞</Text>
+            <MaterialIcons name="tune" size={20} color="white" />
           </TouchableOpacity>
         </View>
       </View>
@@ -284,21 +285,19 @@ export function FormulariosListScreen() {
                 <TouchableOpacity
                   disabled={page <= 1}
                   onPress={() => load(page - 1, search, filtros)}
-                  className={`px-4 py-2 rounded-xl border ${page <= 1 ? 'border-gray-200' : 'border-primary'}`}
+                  className={`flex-row items-center gap-1 px-4 py-2 rounded-xl border ${page <= 1 ? 'border-gray-200' : 'border-primary'}`}
                 >
-                  <Text className={page <= 1 ? 'text-gray-300 text-sm' : 'text-primary text-sm'}>
-                    ← Anterior
-                  </Text>
+                  <MaterialIcons name="chevron-left" size={16} color={page <= 1 ? '#D1D5DB' : '#0D2347'} />
+                  <Text className={page <= 1 ? 'text-gray-300 text-sm' : 'text-primary text-sm'}>Anterior</Text>
                 </TouchableOpacity>
                 <Text className="text-muted text-sm">{page}/{totalPages}</Text>
                 <TouchableOpacity
                   disabled={page >= totalPages}
                   onPress={() => load(page + 1, search, filtros)}
-                  className={`px-4 py-2 rounded-xl border ${page >= totalPages ? 'border-gray-200' : 'border-primary'}`}
+                  className={`flex-row items-center gap-1 px-4 py-2 rounded-xl border ${page >= totalPages ? 'border-gray-200' : 'border-primary'}`}
                 >
-                  <Text className={page >= totalPages ? 'text-gray-300 text-sm' : 'text-primary text-sm'}>
-                    Próximo →
-                  </Text>
+                  <Text className={page >= totalPages ? 'text-gray-300 text-sm' : 'text-primary text-sm'}>Próximo</Text>
+                  <MaterialIcons name="chevron-right" size={16} color={page >= totalPages ? '#D1D5DB' : '#0D2347'} />
                 </TouchableOpacity>
               </View>
             ) : null
@@ -313,15 +312,16 @@ export function FormulariosListScreen() {
             <View className="flex-row items-center justify-between mb-4">
               <Text className="text-primary font-bold text-base">Filtros e Ordenação</Text>
               <TouchableOpacity onPress={() => setShowFiltros(false)}>
-                <Text className="text-gray-400 text-xl">✕</Text>
+                <MaterialIcons name="close" size={22} color="#9CA3AF" />
               </TouchableOpacity>
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false}>
               {/* Tipo de formulário */}
-              <Text className="text-xs font-semibold text-gray-500 uppercase mb-2">
-                📋 Tipo de formulário
-              </Text>
+              <View className="flex-row items-center gap-1.5 mb-2">
+                <MaterialIcons name="assignment" size={14} color="#6B7280" />
+                <Text className="text-xs font-semibold text-gray-500 uppercase">Tipo de formulário</Text>
+              </View>
               <View className="flex-row flex-wrap gap-2 mb-4">
                 {tiposFormulario.map((t) => {
                   const sel = filtrosDraft.tiposAtivos.includes(t.id_tipo_formulario);
@@ -340,9 +340,10 @@ export function FormulariosListScreen() {
               </View>
 
               {/* Status */}
-              <Text className="text-xs font-semibold text-gray-500 uppercase mb-2">
-                ✅ Status
-              </Text>
+              <View className="flex-row items-center gap-1.5 mb-2">
+                <MaterialIcons name="check-circle-outline" size={14} color="#6B7280" />
+                <Text className="text-xs font-semibold text-gray-500 uppercase">Status</Text>
+              </View>
               <TouchableOpacity
                 onPress={() =>
                   setFiltrosDraft((p) => ({ ...p, apenasAtivos: !p.apenasAtivos }))
@@ -353,16 +354,17 @@ export function FormulariosListScreen() {
                   className={`w-5 h-5 rounded border-2 mr-3 items-center justify-center ${filtrosDraft.apenasAtivos ? 'bg-primary border-primary' : 'border-gray-300'}`}
                 >
                   {filtrosDraft.apenasAtivos && (
-                    <Text className="text-white text-xs font-bold">✓</Text>
+                    <MaterialIcons name="check" size={12} color="white" />
                   )}
                 </View>
                 <Text className="text-sm text-gray-700">Exibir apenas formulários ativos</Text>
               </TouchableOpacity>
 
               {/* Data de criação */}
-              <Text className="text-xs font-semibold text-gray-500 uppercase mb-2">
-                📅 Filtrar por data de criação
-              </Text>
+              <View className="flex-row items-center gap-1.5 mb-2">
+                <MaterialIcons name="calendar-today" size={14} color="#6B7280" />
+                <Text className="text-xs font-semibold text-gray-500 uppercase">Filtrar por data de criação</Text>
+              </View>
               <View className="flex-row gap-3 mb-4">
                 <View className="flex-1">
                   <Text className="text-xs text-gray-500 mb-1">De</Text>
@@ -389,9 +391,10 @@ export function FormulariosListScreen() {
               </View>
 
               {/* Ordenação */}
-              <Text className="text-xs font-semibold text-gray-500 uppercase mb-2">
-                ↕ Ordenar por
-              </Text>
+              <View className="flex-row items-center gap-1.5 mb-2">
+                <MaterialIcons name="swap-vert" size={14} color="#6B7280" />
+                <Text className="text-xs font-semibold text-gray-500 uppercase">Ordenar por</Text>
+              </View>
               {OPCOES_ORDENACAO.map((op) => {
                 const sel = filtrosDraft.ordenarPor === op.value;
                 return (
