@@ -14,9 +14,11 @@ import { NavigationProp } from '../navigation/types';
 import { InputField } from '../components/InputField';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { authService } from '../services/auth';
+import { useAuth } from '../context/AuthContext';
 
 export function LoginScreen() {
   const navigation = useNavigation<NavigationProp>();
+  const { login: authLogin } = useAuth();
   const [login, setLogin] = useState('');
   const [senha, setSenha] = useState('');
   const [loading, setLoading] = useState(false);
@@ -34,8 +36,14 @@ export function LoginScreen() {
     if (!validate()) return;
     setLoading(true);
     try {
-      await authService.login({ login: login.trim(), senha });
-      // TODO: salvar token e navegar para Home
+      const result = await authService.login({ login: login.trim(), senha });
+      await authLogin(result.access_token, {
+        id_usuario: result.usuario.id_usuario,
+        nome: result.usuario.nome,
+        email: result.usuario.email,
+        tipo: result.usuario.id_tipo_usuario,
+      });
+      // RootNavigator detecta token e navega automaticamente
     } catch (err: any) {
       const msg =
         err?.response?.data?.message ?? 'Não foi possível fazer login. Tente novamente.';

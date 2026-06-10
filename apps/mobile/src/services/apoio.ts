@@ -1,7 +1,5 @@
 import axios from 'axios';
-import { API_BASE_URL } from '../config/api';
-
-const api = axios.create({ baseURL: API_BASE_URL });
+import api from '../config/api';
 
 export const apoioService = {
   getProfissoes: () =>
@@ -12,6 +10,15 @@ export const apoioService = {
 
   getGeneros: () =>
     api.get('/apoio/generos').then((r) => r.data as { id_genero: number; nome: string }[]),
+
+  getTiposFormulario: () =>
+    api.get('/apoio/tipos-formulario').then((r) => r.data as { id_tipo_formulario: number; nome: string }[]),
+
+  getTiposPergunta: () =>
+    api.get('/apoio/tipos-pergunta').then((r) => r.data as { id_tipo_pergunta: number; nome: string }[]),
+
+  getSituacoesAtendimento: () =>
+    api.get('/apoio/situacoes-atendimento').then((r) => r.data as { id_situacao_atendimento: number; nome: string }[]),
 };
 
 export const buscarCep = async (cep: string) => {

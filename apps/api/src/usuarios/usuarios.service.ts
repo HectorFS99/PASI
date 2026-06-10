@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -7,6 +8,7 @@ import { Prisma } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { ID_FORMULARIO_TRIAGEM, SituacaoAtendimento, TipoUsuario } from '../common/constants';
+import type { AuthUser } from '../auth/current-user.decorator';
 import { CreateProfissionalDto } from './dto/create-profissional.dto';
 import { CreatePacienteDto } from './dto/create-paciente.dto';
 
@@ -89,6 +91,25 @@ export class UsuariosService {
       }
       throw e;
     }
+  }
+
+  async listPacientes(search: string | undefined, user: AuthUser) {
+    if (user.tipo !== TipoUsuario.PROFISSIONAL) {
+      throw new ForbiddenException('Apenas profissionais podem listar pacientes.');
+    }
+    const where: Prisma.usuarioWhereInput = { id_tipo_usuario: TipoUsuario.PACIENTE };
+    if (search) {
+      where.OR = [
+        { nome: { contains: search, mode: 'insensitive' } },
+        { cpf: { contains: search.replace(/\D/g, '') } },
+      ];
+    }
+    return this.prisma.usuario.findMany({
+      where,
+      select: { id_usuario: true, nome: true, cpf: true, email: true },
+      take: 20,
+      orderBy: { nome: 'asc' },
+    });
   }
 
   async findById(id: number) {

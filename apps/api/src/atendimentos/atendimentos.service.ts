@@ -11,7 +11,7 @@ import type { AuthUser } from '../auth/current-user.decorator';
 import { CreateAtendimentoDto } from './dto/create-atendimento.dto';
 import { UpdateAtendimentoDto } from './dto/update-atendimento.dto';
 import { AtribuirFormulariosDto } from './dto/atribuir-formularios.dto';
-import { QueryAtendimentoDto } from './dto/query-atendimento.dto';
+import { OrdenarAtendimentoPor, QueryAtendimentoDto } from './dto/query-atendimento.dto';
 
 @Injectable()
 export class AtendimentosService {
@@ -76,12 +76,39 @@ export class AtendimentosService {
       ];
     }
 
+    if (query.situacoes) {
+      const ids = query.situacoes
+        .split(',')
+        .map((s) => parseInt(s.trim(), 10))
+        .filter((n) => !isNaN(n));
+      if (ids.length > 0) {
+        where.id_situacao_atendimento = { in: ids };
+      }
+    }
+
+    if (query.data_inicio || query.data_fim) {
+      where.dt_cadastro = {
+        ...(query.data_inicio ? { gte: new Date(query.data_inicio) } : {}),
+        ...(query.data_fim ? { lte: new Date(`${query.data_fim}T23:59:59.999Z`) } : {}),
+      };
+    }
+
+    type OrderBy = Prisma.atendimentoOrderByWithRelationInput;
+    const orderByMap: Record<string, OrderBy> = {
+      [OrdenarAtendimentoPor.DATA_DESC]: { id_atendimento: 'desc' },
+      [OrdenarAtendimentoPor.DATA_ASC]: { id_atendimento: 'asc' },
+      [OrdenarAtendimentoPor.PACIENTE]: {
+        usuario_atendimento_id_usuario_pacienteTousuario: { nome: 'asc' },
+      },
+    };
+    const orderBy = orderByMap[query.ordenar_por ?? OrdenarAtendimentoPor.DATA_DESC];
+
     const [data, total] = await this.prisma.$transaction([
       this.prisma.atendimento.findMany({
         where,
         skip,
         take: limit,
-        orderBy: { id_atendimento: 'desc' },
+        orderBy,
         include: this.includePadrao(),
       }),
       this.prisma.atendimento.count({ where }),
@@ -104,6 +131,31 @@ export class AtendimentosService {
     if (!atendimento) {
       throw new NotFoundException('Atendimento não encontrado');
     }
+
+    // Enrich each atendimento_formulario with the patient's response status
+    const idFormularios = atendimento.atendimento_formulario.map((af) => af.id_formulario);
+    if (idFormularios.length > 0) {
+      const fpList = await this.prisma.formulario_paciente.findMany({
+        where: {
+          id_usuario_paciente: atendimento.id_usuario_paciente,
+          id_formulario: { in: idFormularios },
+        },
+        select: {
+          id_formulario: true,
+          id_situacao_formulario: true,
+          situacao_formulario: { select: { nome: true } },
+        },
+      });
+      const statusMap = new Map(fpList.map((fp) => [fp.id_formulario, fp]));
+      return {
+        ...atendimento,
+        atendimento_formulario: atendimento.atendimento_formulario.map((af) => ({
+          ...af,
+          status_formulario_paciente: statusMap.get(af.id_formulario) ?? null,
+        })),
+      };
+    }
+
     return atendimento;
   }
 

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UsuariosService } from './usuarios.service';
 import { CreateProfissionalDto } from './dto/create-profissional.dto';
@@ -21,6 +21,14 @@ export class UsuariosController {
   @ApiOperation({ summary: 'Cadastra um usuário paciente' })
   createPaciente(@Body() dto: CreatePacienteDto) {
     return this.usuariosService.createPaciente(dto);
+  }
+
+  @Get('pacientes')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Lista pacientes para seleção pelo profissional (máx. 20)' })
+  listPacientes(@Query('search') search: string | undefined, @CurrentUser() user: AuthUser) {
+    return this.usuariosService.listPacientes(search, user);
   }
 
   @Get('me')

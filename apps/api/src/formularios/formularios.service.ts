@@ -13,7 +13,7 @@ import { UpdateFormularioDto } from './dto/update-formulario.dto';
 import { CreatePerguntaDto } from './dto/create-pergunta.dto';
 import { UpdatePerguntaDto } from './dto/update-pergunta.dto';
 import { CreateOpcaoDto } from './dto/create-opcao.dto';
-import { QueryFormularioDto } from './dto/query-formulario.dto';
+import { OrdenarFormularioPor, QueryFormularioDto } from './dto/query-formulario.dto';
 
 @Injectable()
 export class FormulariosService {
@@ -55,19 +55,42 @@ export class FormulariosService {
     const limit = query.limit ?? 10;
     const skip = (page - 1) * limit;
 
-    const where: Prisma.formularioWhereInput = query.search
-      ? { nome: { contains: query.search, mode: 'insensitive' } }
-      : {};
+    const where: Prisma.formularioWhereInput = {};
+
+    if (query.search) {
+      where.nome = { contains: query.search, mode: 'insensitive' };
+    }
+    if (query.id_tipo_formulario !== undefined) {
+      where.id_tipo_formulario = query.id_tipo_formulario;
+    }
+    if (query.ativo !== undefined) {
+      where.ativo = query.ativo;
+    }
+    if (query.data_inicio || query.data_fim) {
+      where.dt_cadastro = {
+        ...(query.data_inicio ? { gte: new Date(query.data_inicio) } : {}),
+        ...(query.data_fim ? { lte: new Date(`${query.data_fim}T23:59:59.999Z`) } : {}),
+      };
+    }
+
+    type OrderBy = Prisma.formularioOrderByWithRelationInput;
+    const orderByMap: Record<string, OrderBy> = {
+      [OrdenarFormularioPor.DATA_DESC]: { id_formulario: 'desc' },
+      [OrdenarFormularioPor.DATA_ASC]: { id_formulario: 'asc' },
+      [OrdenarFormularioPor.NOME]: { nome: 'asc' },
+      [OrdenarFormularioPor.MAIS_RESPONDIDOS]: { id_formulario: 'desc' },
+    };
+    const orderBy = orderByMap[query.ordenar_por ?? OrdenarFormularioPor.DATA_DESC];
 
     const [data, total] = await this.prisma.$transaction([
       this.prisma.formulario.findMany({
         where,
         skip,
         take: limit,
-        orderBy: { id_formulario: 'desc' },
+        orderBy,
         include: {
           tipo_formulario: true,
-          _count: { select: { pergunta: true } },
+          _count: { select: { pergunta: true, formulario_paciente: true } },
         },
       }),
       this.prisma.formulario.count({ where }),
