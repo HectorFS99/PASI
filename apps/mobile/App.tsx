@@ -5,6 +5,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { AuthNavigator } from './src/navigation/AuthNavigator';
 import { AppNavigator } from './src/navigation/AppNavigator';
+import { navigationRef } from './src/navigation/navigationRef';
 
 function RootNavigator() {
   const { token, isLoading } = useAuth();
@@ -23,7 +24,7 @@ function RootNavigator() {
 export default function App() {
   return (
     <AuthProvider>
-      <NavigationContainer>
+      <NavigationContainer ref={navigationRef}>
         <RootNavigator />
       </NavigationContainer>
     </AuthProvider>

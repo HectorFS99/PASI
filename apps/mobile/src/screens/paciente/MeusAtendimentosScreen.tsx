@@ -14,11 +14,13 @@ import { PacienteNavProp } from '../../navigation/types';
 import { StatusBadge } from '../../components/StatusBadge';
 import { atendimentosService, Atendimento } from '../../services/atendimentos';
 import { useAuth } from '../../context/AuthContext';
+import { useDrawer } from '../../context/DrawerContext';
 import { formatProtocolo, formatData } from '../../utils/format';
 
 export function MeusAtendimentosScreen() {
   const navigation = useNavigation<PacienteNavProp>();
-  const { usuario, logout } = useAuth();
+  const { usuario } = useAuth();
+  const { openDrawer } = useDrawer();
   const [atendimentos, setAtendimentos] = useState<Atendimento[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -106,18 +108,18 @@ export function MeusAtendimentosScreen() {
       {/* Header */}
       <View className="bg-primary px-5 pt-14 pb-5">
         <View className="flex-row items-center gap-3 mb-3">
-          <View className="w-10 h-10 rounded-full bg-white/20 items-center justify-center">
-            <MaterialIcons name="person" size={22} color="white" />
-          </View>
+          <TouchableOpacity
+            onPress={openDrawer}
+            className="w-10 h-10 rounded-xl bg-white/15 items-center justify-center"
+          >
+            <MaterialIcons name="menu" size={22} color="white" />
+          </TouchableOpacity>
           <View className="flex-1">
             <Text className="text-white/70 text-xs">Olá,</Text>
             <Text className="text-white text-sm font-semibold" numberOfLines={1}>
               {usuario?.nome}
             </Text>
           </View>
-          <TouchableOpacity onPress={logout} className="bg-white/15 px-3 py-1.5 rounded-xl">
-            <Text className="text-white text-xs">Sair</Text>
-          </TouchableOpacity>
         </View>
         <Text className="text-white text-xl font-bold">Meus Atendimentos</Text>
         <Text className="text-white/60 text-xs mb-3">

@@ -17,6 +17,7 @@ export type ProfissionalStackParamList = {
   FormulariosList: undefined;
   DetalhesFormulario: { id: number };
   CriarEditarFormulario: { id?: number; modo: 'criar' | 'editar' };
+  Perfil: undefined;
 };
 
 export type PacienteStackParamList = {
@@ -27,6 +28,7 @@ export type PacienteStackParamList = {
     idFormulario: number;
     nomeFormulario: string;
   };
+  Perfil: undefined;
 };
 
 export type AuthNavProp = NativeStackNavigationProp<AuthStackParamList>;

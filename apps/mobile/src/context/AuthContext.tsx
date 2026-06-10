@@ -15,6 +15,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (token: string, usuario: AuthUser) => Promise<void>;
   logout: () => Promise<void>;
+  updateUsuario: (partial: Partial<AuthUser>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -56,8 +57,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUsuario(null);
   };
 
+  const updateUsuario = async (partial: Partial<AuthUser>) => {
+    setUsuario((prev) => {
+      if (!prev) return prev;
+      const merged = { ...prev, ...partial };
+      AsyncStorage.setItem('@pasi:usuario', JSON.stringify(merged)).catch(() => null);
+      return merged;
+    });
+  };
+
   return (
-    <AuthContext.Provider value={{ token, usuario, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ token, usuario, isLoading, login, logout, updateUsuario }}>
       {children}
     </AuthContext.Provider>
   );

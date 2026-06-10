@@ -16,7 +16,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { ProfissionalNavProp } from '../../navigation/types';
 import { StatusBadge } from '../../components/StatusBadge';
 import { atendimentosService, Atendimento } from '../../services/atendimentos';
-import { useAuth } from '../../context/AuthContext';
+import { useDrawer } from '../../context/DrawerContext';
 import { formatProtocolo, formatData } from '../../utils/format';
 
 type OrdenarPor = 'data_desc' | 'data_asc' | 'paciente';
@@ -52,7 +52,7 @@ const OPCOES_ORDENACAO: { label: string; value: OrdenarPor }[] = [
 
 export function AtendimentosListScreen() {
   const navigation = useNavigation<ProfissionalNavProp>();
-  const { logout } = useAuth();
+  const { openDrawer } = useDrawer();
   const [atendimentos, setAtendimentos] = useState<Atendimento[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -200,30 +200,26 @@ export function AtendimentosListScreen() {
       {/* Header */}
       <View className="bg-primary px-5 pt-14 pb-4">
         <View className="flex-row items-center justify-between">
-          <View>
-            <Text className="text-white text-xl font-bold">Atendimentos</Text>
-            <Text className="text-white/60 text-xs">
-              {total} atendimento{total !== 1 ? 's' : ''} encontrado{total !== 1 ? 's' : ''}
-            </Text>
-          </View>
-          <View className="flex-row items-center gap-2">
+          <View className="flex-row items-center gap-3 flex-1">
             <TouchableOpacity
-              onPress={() => navigation.navigate('FormulariosList')}
-              className="flex-row items-center gap-1.5 px-3 h-9 rounded-xl bg-white/15"
+              onPress={openDrawer}
+              className="w-9 h-9 rounded-xl bg-white/15 items-center justify-center"
             >
-              <MaterialIcons name="assignment" size={16} color="white" />
-              <Text className="text-white text-xs font-medium">Formulários</Text>
+              <MaterialIcons name="menu" size={22} color="white" />
             </TouchableOpacity>
-            <TouchableOpacity onPress={logout} className="w-8 h-8 rounded-full bg-white/20 items-center justify-center">
-              <MaterialIcons name="person" size={20} color="white" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => navigation.navigate('NovoAtendimento')}
-              className="w-8 h-8 rounded-full bg-green-500 items-center justify-center"
-            >
-              <MaterialIcons name="add" size={22} color="white" />
-            </TouchableOpacity>
+            <View>
+              <Text className="text-white text-xl font-bold">Atendimentos</Text>
+              <Text className="text-white/60 text-xs">
+                {total} atendimento{total !== 1 ? 's' : ''} encontrado{total !== 1 ? 's' : ''}
+              </Text>
+            </View>
           </View>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('NovoAtendimento')}
+            className="w-9 h-9 rounded-full bg-green-500 items-center justify-center"
+          >
+            <MaterialIcons name="add" size={22} color="white" />
+          </TouchableOpacity>
         </View>
 
         {/* Busca + Filtros */}

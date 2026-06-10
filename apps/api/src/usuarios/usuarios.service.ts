@@ -11,6 +11,7 @@ import { ID_FORMULARIO_TRIAGEM, SituacaoAtendimento, TipoUsuario } from '../comm
 import type { AuthUser } from '../auth/current-user.decorator';
 import { CreateProfissionalDto } from './dto/create-profissional.dto';
 import { CreatePacienteDto } from './dto/create-paciente.dto';
+import { UpdateMeDto } from './dto/update-me.dto';
 
 const SALT_ROUNDS = 10;
 
@@ -120,6 +121,52 @@ export class UsuariosService {
       throw new NotFoundException('Usuário não encontrado');
     }
     return this.semSenha(usuario);
+  }
+
+  // Atualiza o cadastro do próprio usuário autenticado. CPF nunca é alterado.
+  async updateMe(id: number, dto: UpdateMeDto) {
+    await this.findById(id);
+
+    const data: Prisma.usuarioUpdateInput = {
+      nome: dto.nome,
+      email: dto.email?.toLowerCase(),
+      tel_celular: dto.tel_celular,
+      sexo: dto.sexo,
+      dt_nascimento:
+        dto.dt_nascimento !== undefined
+          ? dto.dt_nascimento
+            ? new Date(dto.dt_nascimento)
+            : null
+          : undefined,
+      nac_estrangeira: dto.nac_estrangeira,
+      cep: dto.cep,
+      logradouro: dto.logradouro,
+      numero: dto.numero,
+      complemento: dto.complemento,
+      bairro: dto.bairro,
+      cidade: dto.cidade,
+      estado: dto.estado,
+      pais: dto.pais,
+      ...(dto.id_genero !== undefined
+        ? { genero: { connect: { id_genero: dto.id_genero } } }
+        : {}),
+    };
+
+    try {
+      const usuario = await this.prisma.usuario.update({
+        where: { id_usuario: id },
+        data,
+      });
+      return this.semSenha(usuario);
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+        const campo = (e.meta?.target as string) ?? 'campo único';
+        throw new ConflictException(
+          `Já existe um usuário com este ${this.nomeCampoConflito(campo)}.`,
+        );
+      }
+      throw e;
+    }
   }
 
   private async criar(data: Prisma.usuarioCreateInput) {

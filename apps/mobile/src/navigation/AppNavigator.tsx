@@ -1,6 +1,10 @@
 import React from 'react';
+import { View } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../context/AuthContext';
+import { DrawerProvider } from '../context/DrawerContext';
+import { ProfilePhotoProvider } from '../context/ProfilePhotoContext';
+import { AppDrawer } from '../components/AppDrawer';
 import { ProfissionalStackParamList, PacienteStackParamList } from './types';
 
 import { AtendimentosListScreen } from '../screens/profissional/AtendimentosListScreen';
@@ -15,6 +19,8 @@ import { MeusAtendimentosScreen } from '../screens/paciente/MeusAtendimentosScre
 import { FormulariosAtendimentoScreen } from '../screens/paciente/FormulariosAtendimentoScreen';
 import { ResponderFormularioScreen } from '../screens/paciente/ResponderFormularioScreen';
 
+import { PerfilScreen } from '../screens/PerfilScreen';
+
 const ProfStack = createNativeStackNavigator<ProfissionalStackParamList>();
 const PacStack = createNativeStackNavigator<PacienteStackParamList>();
 
@@ -28,6 +34,7 @@ function ProfissionalNavigator() {
       <ProfStack.Screen name="FormulariosList" component={FormulariosListScreen} />
       <ProfStack.Screen name="DetalhesFormulario" component={DetalhesFormularioScreen} />
       <ProfStack.Screen name="CriarEditarFormulario" component={CriarEditarFormularioScreen} />
+      <ProfStack.Screen name="Perfil" component={PerfilScreen} />
     </ProfStack.Navigator>
   );
 }
@@ -38,11 +45,21 @@ function PacienteNavigator() {
       <PacStack.Screen name="MeusAtendimentos" component={MeusAtendimentosScreen} />
       <PacStack.Screen name="FormulariosAtendimento" component={FormulariosAtendimentoScreen} />
       <PacStack.Screen name="ResponderFormulario" component={ResponderFormularioScreen} />
+      <PacStack.Screen name="Perfil" component={PerfilScreen} />
     </PacStack.Navigator>
   );
 }
 
 export function AppNavigator() {
   const { usuario } = useAuth();
-  return usuario?.tipo === 1 ? <ProfissionalNavigator /> : <PacienteNavigator />;
+  return (
+    <ProfilePhotoProvider>
+      <DrawerProvider>
+        <View style={{ flex: 1 }}>
+          {usuario?.tipo === 1 ? <ProfissionalNavigator /> : <PacienteNavigator />}
+          <AppDrawer />
+        </View>
+      </DrawerProvider>
+    </ProfilePhotoProvider>
+  );
 }

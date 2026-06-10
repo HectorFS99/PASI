@@ -225,11 +225,19 @@ export function FormulariosListScreen() {
       {/* Header */}
       <View className="bg-primary px-5 pt-14 pb-4">
         <View className="flex-row items-center justify-between">
-          <View>
-            <Text className="text-white text-xl font-bold">Módulo de Formulários</Text>
-            <Text className="text-white/60 text-xs">
-              {total} formulário{total !== 1 ? 's' : ''} exibido{total !== 1 ? 's' : ''}
-            </Text>
+          <View className="flex-row items-center gap-3 flex-1">
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              className="w-9 h-9 rounded-xl bg-white/15 items-center justify-center"
+            >
+              <MaterialIcons name="arrow-back" size={22} color="white" />
+            </TouchableOpacity>
+            <View>
+              <Text className="text-white text-xl font-bold">Módulo de Formulários</Text>
+              <Text className="text-white/60 text-xs">
+                {total} formulário{total !== 1 ? 's' : ''} exibido{total !== 1 ? 's' : ''}
+              </Text>
+            </View>
           </View>
           <TouchableOpacity
             onPress={() =>
