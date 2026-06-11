@@ -1,32 +1,35 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
   View,
   Text,
   FlatList,
   TouchableOpacity,
   TextInput,
-  Alert,
   ActivityIndicator,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { PacienteNavProp } from '../../navigation/types';
 import { StatusBadge } from '../../components/StatusBadge';
 import { atendimentosService, Atendimento } from '../../services/atendimentos';
 import { useAuth } from '../../context/AuthContext';
 import { useDrawer } from '../../context/DrawerContext';
+import { useFeedback } from '../../context/FeedbackContext';
 import { formatProtocolo, formatData } from '../../utils/format';
 
 export function MeusAtendimentosScreen() {
   const navigation = useNavigation<PacienteNavProp>();
   const { usuario } = useAuth();
   const { openDrawer } = useDrawer();
+  const { toast } = useFeedback();
   const [atendimentos, setAtendimentos] = useState<Atendimento[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const searchRef = useRef(search);
+  searchRef.current = search;
 
   const temPendentes = atendimentos.some((a) =>
     a.atendimento_formulario.some(
@@ -34,7 +37,7 @@ export function MeusAtendimentosScreen() {
     ),
   );
 
-  const load = useCallback(async (p = 1, q = search) => {
+  const load = useCallback(async (p = 1, q = searchRef.current) => {
     setLoading(true);
     try {
       const res = await atendimentosService.listar({ page: p, search: q || undefined });
@@ -43,13 +46,21 @@ export function MeusAtendimentosScreen() {
       setPage(res.page);
       setTotalPages(res.totalPages);
     } catch {
-      Alert.alert('Erro', 'Não foi possível carregar seus atendimentos.');
+      toast('Não foi possível carregar seus atendimentos.', 'error');
     } finally {
       setLoading(false);
     }
-  }, [search]);
+  }, [toast]);
 
-  useEffect(() => { load(1, ''); }, []);
+  const loadRef = useRef(load);
+  loadRef.current = load;
+
+  // Recarrega ao focar (ex.: ao voltar de responder um formulário).
+  useFocusEffect(
+    useCallback(() => {
+      loadRef.current(1, searchRef.current);
+    }, []),
+  );
 
   const pendentesCount = (a: Atendimento) =>
     a.atendimento_formulario.filter(

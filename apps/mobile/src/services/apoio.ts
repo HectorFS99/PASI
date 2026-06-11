@@ -6,7 +6,7 @@ export const apoioService = {
     api.get('/apoio/profissoes').then((r) => r.data as { id_profissao: number; nome: string }[]),
 
   getUnidades: () =>
-    api.get('/apoio/unidades-atendimento').then((r) => r.data as { id_unidade_atendimento: number; nome: string }[]),
+    api.get('/apoio/unidades').then((r) => r.data as { id_unidade_atendimento: number; nome: string }[]),
 
   getGeneros: () =>
     api.get('/apoio/generos').then((r) => r.data as { id_genero: number; nome: string }[]),

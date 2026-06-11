@@ -1,22 +1,22 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
   View,
   Text,
   FlatList,
   TouchableOpacity,
   TextInput,
-  Alert,
   ActivityIndicator,
   Modal,
   ScrollView,
   Platform,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { ProfissionalNavProp } from '../../navigation/types';
 import { StatusBadge } from '../../components/StatusBadge';
 import { atendimentosService, Atendimento } from '../../services/atendimentos';
 import { useDrawer } from '../../context/DrawerContext';
+import { useFeedback } from '../../context/FeedbackContext';
 import { formatProtocolo, formatData } from '../../utils/format';
 
 type OrdenarPor = 'data_desc' | 'data_asc' | 'paciente';
@@ -53,6 +53,7 @@ const OPCOES_ORDENACAO: { label: string; value: OrdenarPor }[] = [
 export function AtendimentosListScreen() {
   const navigation = useNavigation<ProfissionalNavProp>();
   const { openDrawer } = useDrawer();
+  const { toast, confirm } = useFeedback();
   const [atendimentos, setAtendimentos] = useState<Atendimento[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -64,6 +65,8 @@ export function AtendimentosListScreen() {
   const [filtrosDraft, setFiltrosDraft] = useState<Filtros>(FILTROS_PADRAO);
   const searchRef = useRef(search);
   searchRef.current = search;
+  const filtrosRef = useRef(filtros);
+  filtrosRef.current = filtros;
 
   const buildParams = useCallback(
     (p: number, q: string, f: Filtros) => ({
@@ -87,17 +90,23 @@ export function AtendimentosListScreen() {
         setPage(res.page);
         setTotalPages(res.totalPages);
       } catch {
-        Alert.alert('Erro', 'Não foi possível carregar os atendimentos.');
+        toast('Não foi possível carregar os atendimentos.', 'error');
       } finally {
         setLoading(false);
       }
     },
-    [filtros, buildParams],
+    [filtros, buildParams, toast],
   );
 
-  useEffect(() => {
-    load(1, '', FILTROS_PADRAO);
-  }, []);
+  const loadRef = useRef(load);
+  loadRef.current = load;
+
+  // Recarrega sempre que a tela ganha foco (ex.: ao voltar de Novo/Editar atendimento).
+  useFocusEffect(
+    useCallback(() => {
+      loadRef.current(1, searchRef.current, filtrosRef.current);
+    }, []),
+  );
 
   const handleSearch = (text: string) => {
     setSearch(text);
@@ -114,22 +123,21 @@ export function AtendimentosListScreen() {
     setFiltrosDraft(FILTROS_PADRAO);
   };
 
-  const handleEncerrar = (id: number) => {
-    Alert.alert('Encerrar atendimento', 'Deseja encerrar este atendimento?', [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Encerrar',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await atendimentosService.encerrar(id);
-            load(page, search, filtros);
-          } catch (err: any) {
-            Alert.alert('Erro', err?.response?.data?.message ?? 'Não foi possível encerrar.');
-          }
-        },
-      },
-    ]);
+  const handleEncerrar = async (id: number) => {
+    const ok = await confirm({
+      title: 'Encerrar atendimento',
+      message: 'Deseja encerrar este atendimento?',
+      confirmLabel: 'Encerrar',
+      destructive: true,
+    });
+    if (!ok) return;
+    try {
+      await atendimentosService.encerrar(id);
+      toast('Atendimento encerrado.', 'success');
+      load(page, search, filtros);
+    } catch (err: any) {
+      toast(err?.response?.data?.message ?? 'Não foi possível encerrar.', 'error');
+    }
   };
 
   const toggleSituacao = (id: number) => {

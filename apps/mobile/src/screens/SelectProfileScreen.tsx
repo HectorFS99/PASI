@@ -36,12 +36,20 @@ export function SelectProfileScreen() {
   return (
     <View className="flex-1 bg-white">
       {/* Header azul com logo */}
-      <View className="bg-primary items-center pt-14 pb-8 rounded-b-3xl">
-        <Image
-          source={require('../../assets/logo.png')}
-          style={{ width: 160, height: 160 }}
-          resizeMode="contain"
-        />
+      <View className="bg-primary pt-14 pb-8 rounded-b-3xl">
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          className="ml-5 mb-2 self-start w-9 h-9 rounded-xl bg-white/15 items-center justify-center"
+        >
+          <MaterialIcons name="arrow-back" size={22} color="white" />
+        </TouchableOpacity>
+        <View className="items-center">
+          <Image
+            source={require('../../assets/logo.png')}
+            style={{ width: 150, height: 150 }}
+            resizeMode="contain"
+          />
+        </View>
       </View>
 
       <View className="px-6 pt-8">

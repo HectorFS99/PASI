@@ -3,6 +3,7 @@ import React from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
+import { FeedbackProvider } from './src/context/FeedbackContext';
 import { AuthNavigator } from './src/navigation/AuthNavigator';
 import { AppNavigator } from './src/navigation/AppNavigator';
 import { navigationRef } from './src/navigation/navigationRef';
@@ -24,9 +25,11 @@ function RootNavigator() {
 export default function App() {
   return (
     <AuthProvider>
-      <NavigationContainer ref={navigationRef}>
-        <RootNavigator />
-      </NavigationContainer>
+      <FeedbackProvider>
+        <NavigationContainer ref={navigationRef}>
+          <RootNavigator />
+        </NavigationContainer>
+      </FeedbackProvider>
     </AuthProvider>
   );
 }

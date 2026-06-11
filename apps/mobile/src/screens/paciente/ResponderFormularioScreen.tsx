@@ -5,7 +5,6 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Alert,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
@@ -15,6 +14,7 @@ import { PacienteNavProp, PacienteStackParamList } from '../../navigation/types'
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { MaterialIcons } from '@expo/vector-icons';
 import { formulariosService, Pergunta, RespostaItem, DetalheFormulario } from '../../services/formularios';
+import { useFeedback } from '../../context/FeedbackContext';
 
 type RouteT = RouteProp<PacienteStackParamList, 'ResponderFormulario'>;
 
@@ -48,6 +48,7 @@ function initRespostas(perguntas: Pergunta[], respostasAtuais: DetalheFormulario
 
 export function ResponderFormularioScreen() {
   const navigation = useNavigation<PacienteNavProp>();
+  const { toast } = useFeedback();
   const { idAtendimento, idFormulario, nomeFormulario } = useRoute<RouteT>().params;
 
   const [detalhe, setDetalhe] = useState<DetalheFormulario | null>(null);
@@ -77,7 +78,7 @@ export function ResponderFormularioScreen() {
       }
       setOpcoesSelecionadas(opcs);
     } catch {
-      Alert.alert('Erro', 'Não foi possível carregar o formulário.');
+      toast('Não foi possível carregar o formulário.', 'error');
       navigation.goBack();
     } finally {
       setLoading(false);
@@ -121,9 +122,9 @@ export function ResponderFormularioScreen() {
     setSaving(true);
     try {
       await formulariosService.salvar(idAtendimento, idFormulario, buildPayload());
-      Alert.alert('Rascunho salvo', 'Suas respostas foram salvas como rascunho.');
+      toast('Respostas salvas como rascunho.', 'success');
     } catch (err: any) {
-      Alert.alert('Erro', err?.response?.data?.message ?? 'Não foi possível salvar.');
+      toast(err?.response?.data?.message ?? 'Não foi possível salvar.', 'error');
     } finally {
       setSaving(false);
     }
@@ -134,11 +135,10 @@ export function ResponderFormularioScreen() {
     try {
       await formulariosService.salvar(idAtendimento, idFormulario, buildPayload());
       await formulariosService.concluir(idAtendimento, idFormulario);
-      Alert.alert('Formulário enviado!', 'Suas respostas foram registradas com sucesso.', [
-        { text: 'OK', onPress: () => navigation.goBack() },
-      ]);
+      toast('Formulário enviado com sucesso!', 'success');
+      navigation.goBack();
     } catch (err: any) {
-      Alert.alert('Erro', err?.response?.data?.message ?? 'Não foi possível enviar.');
+      toast(err?.response?.data?.message ?? 'Não foi possível enviar.', 'error');
     } finally {
       setSending(false);
     }

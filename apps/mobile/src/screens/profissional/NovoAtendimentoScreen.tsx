@@ -5,7 +5,6 @@ import {
   ScrollView,
   TextInput,
   TouchableOpacity,
-  Alert,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
@@ -16,9 +15,11 @@ import { PrimaryButton } from '../../components/PrimaryButton';
 import { MaterialIcons } from '@expo/vector-icons';
 import { atendimentosService, Paciente } from '../../services/atendimentos';
 import { formulariosService, FormularioItem } from '../../services/formularios';
+import { useFeedback } from '../../context/FeedbackContext';
 
 export function NovoAtendimentoScreen() {
   const navigation = useNavigation<ProfissionalNavProp>();
+  const { toast } = useFeedback();
   const [descricao, setDescricao] = useState('');
   const [pacienteBusca, setPacienteBusca] = useState('');
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
@@ -61,7 +62,7 @@ export function NovoAtendimentoScreen() {
   );
 
   const handleConfirmar = async () => {
-    if (!pacienteSelecionado) { Alert.alert('Atenção', 'Selecione um paciente.'); return; }
+    if (!pacienteSelecionado) { toast('Selecione um paciente.', 'error'); return; }
     setLoading(true);
     try {
       await atendimentosService.criar({
@@ -69,11 +70,10 @@ export function NovoAtendimentoScreen() {
         id_usuario_paciente: pacienteSelecionado.id_usuario,
         formularios: Array.from(selectedForms),
       });
-      Alert.alert('Sucesso', 'Atendimento criado!', [
-        { text: 'OK', onPress: () => navigation.goBack() },
-      ]);
+      toast('Atendimento criado com sucesso!', 'success');
+      navigation.goBack();
     } catch (err: any) {
-      Alert.alert('Erro', err?.response?.data?.message ?? 'Não foi possível criar o atendimento.');
+      toast(err?.response?.data?.message ?? 'Não foi possível criar o atendimento.', 'error');
     } finally {
       setLoading(false);
     }

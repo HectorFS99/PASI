@@ -5,7 +5,6 @@ import {
   ScrollView,
   TextInput,
   TouchableOpacity,
-  Alert,
   Modal,
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -15,15 +14,18 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { ProfissionalNavProp, ProfissionalStackParamList } from '../../navigation/types';
 import { StatusBadge } from '../../components/StatusBadge';
 import { PrimaryButton } from '../../components/PrimaryButton';
+import { FormListSkeleton } from '../../components/Skeleton';
 import { MaterialIcons } from '@expo/vector-icons';
 import { atendimentosService, Atendimento } from '../../services/atendimentos';
 import { formulariosService, FormularioItem } from '../../services/formularios';
+import { useFeedback } from '../../context/FeedbackContext';
 import { formatProtocolo } from '../../utils/format';
 
 type RouteT = RouteProp<ProfissionalStackParamList, 'EditarAtendimento'>;
 
 export function EditarAtendimentoScreen() {
   const navigation = useNavigation<ProfissionalNavProp>();
+  const { toast, confirm } = useFeedback();
   const { id } = useRoute<RouteT>().params;
 
   const [atendimento, setAtendimento] = useState<Atendimento | null>(null);
@@ -33,6 +35,7 @@ export function EditarAtendimentoScreen() {
 
   // Modal adicionar formulários
   const [modalVisible, setModalVisible] = useState(false);
+  const [modalLoading, setModalLoading] = useState(false);
   const [formDisp, setFormDisp] = useState<FormularioItem[]>([]);
   const [formBusca, setFormBusca] = useState('');
   const [selecionados, setSelecionados] = useState<Set<number>>(new Set());
@@ -44,7 +47,7 @@ export function EditarAtendimentoScreen() {
       setAtendimento(a);
       setDescricao(a.descricao ?? '');
     } catch {
-      Alert.alert('Erro', 'Não foi possível carregar o atendimento.');
+      toast('Não foi possível carregar o atendimento.', 'error');
       navigation.goBack();
     } finally {
       setLoading(false);
@@ -54,12 +57,16 @@ export function EditarAtendimentoScreen() {
   useEffect(() => { load(); }, [load]);
 
   const abrirModal = async () => {
+    // Abre o modal já com skeleton enquanto busca os formulários disponíveis.
+    setSelecionados(new Set());
+    setFormBusca('');
+    setFormDisp([]);
+    setModalLoading(true);
+    setModalVisible(true);
     const res = await formulariosService.listar({ ativo: true }).catch(() => ({ data: [] }));
     const jaAtrib = new Set(atendimento?.atendimento_formulario.map((af) => af.id_formulario) ?? []);
     setFormDisp(res.data.filter((f) => !jaAtrib.has(f.id_formulario)));
-    setSelecionados(new Set());
-    setFormBusca('');
-    setModalVisible(true);
+    setModalLoading(false);
   };
 
   const confirmarAdicao = async () => {
@@ -68,41 +75,40 @@ export function EditarAtendimentoScreen() {
     try {
       await atendimentosService.atribuirFormularios(id, Array.from(selecionados));
       setModalVisible(false);
+      toast('Formulário(s) atribuído(s) com sucesso.', 'success');
       load();
     } catch (err: any) {
-      Alert.alert('Erro', err?.response?.data?.message ?? 'Não foi possível atribuir.');
+      toast(err?.response?.data?.message ?? 'Não foi possível atribuir.', 'error');
     } finally {
       setAdicionando(false);
     }
   };
 
-  const removerFormulario = (idForm: number) => {
-    Alert.alert('Remover formulário', 'Remover este formulário do atendimento?', [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Remover',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await atendimentosService.removerFormulario(id, idForm);
-            load();
-          } catch (err: any) {
-            Alert.alert('Erro', err?.response?.data?.message ?? 'Não foi possível remover.');
-          }
-        },
-      },
-    ]);
+  const removerFormulario = async (idForm: number) => {
+    const ok = await confirm({
+      title: 'Remover formulário',
+      message: 'Remover este formulário do atendimento?',
+      confirmLabel: 'Remover',
+      destructive: true,
+    });
+    if (!ok) return;
+    try {
+      await atendimentosService.removerFormulario(id, idForm);
+      toast('Formulário removido.', 'success');
+      load();
+    } catch (err: any) {
+      toast(err?.response?.data?.message ?? 'Não foi possível remover.', 'error');
+    }
   };
 
   const salvar = async () => {
     setSaving(true);
     try {
       await atendimentosService.atualizar(id, { descricao: descricao.trim() || undefined });
-      Alert.alert('Sucesso', 'Alterações salvas!', [
-        { text: 'OK', onPress: () => navigation.goBack() },
-      ]);
+      toast('Alterações salvas!', 'success');
+      navigation.goBack();
     } catch (err: any) {
-      Alert.alert('Erro', err?.response?.data?.message ?? 'Não foi possível salvar.');
+      toast(err?.response?.data?.message ?? 'Não foi possível salvar.', 'error');
     } finally {
       setSaving(false);
     }
@@ -249,30 +255,38 @@ export function EditarAtendimentoScreen() {
             />
 
             <ScrollView className="max-h-64">
-              {formsFiltrados.map((f) => {
-                const sel = selecionados.has(f.id_formulario);
-                return (
-                  <TouchableOpacity
-                    key={f.id_formulario}
-                    onPress={() => {
-                      setSelecionados((prev) => {
-                        const next = new Set(prev);
-                        sel ? next.delete(f.id_formulario) : next.add(f.id_formulario);
-                        return next;
-                      });
-                    }}
-                    className={`flex-row items-center p-3 rounded-xl mb-2 border ${sel ? 'bg-primary/5 border-primary' : 'border-border'}`}
-                  >
-                    <MaterialIcons name="assignment" size={22} color="#4A5568" style={{ marginRight: 12 }} />
-                    <View className="flex-1">
-                      <Text className="text-xs text-primary font-semibold">{f.tipo_formulario?.nome ?? 'Geral'}</Text>
-                      <Text className="text-sm text-gray-800">{f.nome}</Text>
-                      <Text className="text-xs text-muted" numberOfLines={1}>{f.descricao}</Text>
-                    </View>
-                    {sel && <MaterialIcons name="check" size={18} color="#0D2347" />}
-                  </TouchableOpacity>
-                );
-              })}
+              {modalLoading ? (
+                <FormListSkeleton rows={4} />
+              ) : formsFiltrados.length === 0 ? (
+                <Text className="text-center text-muted text-sm py-6">
+                  Nenhum formulário disponível para adicionar.
+                </Text>
+              ) : (
+                formsFiltrados.map((f) => {
+                  const sel = selecionados.has(f.id_formulario);
+                  return (
+                    <TouchableOpacity
+                      key={f.id_formulario}
+                      onPress={() => {
+                        setSelecionados((prev) => {
+                          const next = new Set(prev);
+                          sel ? next.delete(f.id_formulario) : next.add(f.id_formulario);
+                          return next;
+                        });
+                      }}
+                      className={`flex-row items-center p-3 rounded-xl mb-2 border ${sel ? 'bg-primary/5 border-primary' : 'border-border'}`}
+                    >
+                      <MaterialIcons name="assignment" size={22} color="#4A5568" style={{ marginRight: 12 }} />
+                      <View className="flex-1">
+                        <Text className="text-xs text-primary font-semibold">{f.tipo_formulario?.nome ?? 'Geral'}</Text>
+                        <Text className="text-sm text-gray-800">{f.nome}</Text>
+                        <Text className="text-xs text-muted" numberOfLines={1}>{f.descricao}</Text>
+                      </View>
+                      {sel && <MaterialIcons name="check" size={18} color="#0D2347" />}
+                    </TouchableOpacity>
+                  );
+                })
+              )}
             </ScrollView>
 
             <View className="flex-row gap-3 mt-4">

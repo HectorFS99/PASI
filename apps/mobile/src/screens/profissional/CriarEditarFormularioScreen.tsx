@@ -5,7 +5,6 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Alert,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
@@ -21,6 +20,7 @@ import {
   CriarPerguntaPayload,
 } from '../../services/formularios';
 import { apoioService } from '../../services/apoio';
+import { useFeedback } from '../../context/FeedbackContext';
 
 type RouteT = RouteProp<ProfissionalStackParamList, 'CriarEditarFormulario'>;
 type IconName = keyof typeof MaterialIcons.glyphMap;
@@ -66,6 +66,7 @@ function gerarKey() {
 
 export function CriarEditarFormularioScreen() {
   const navigation = useNavigation<ProfissionalNavProp>();
+  const { toast, confirm } = useFeedback();
   const { id, modo } = useRoute<RouteT>().params;
   const isEditar = modo === 'editar' && !!id;
 
@@ -99,7 +100,7 @@ export function CriarEditarFormularioScreen() {
       setIdTipoFormulario(f.tipo_formulario.id_tipo_formulario);
       setPerguntasExistentes(f.pergunta ?? []);
     } catch {
-      Alert.alert('Erro', 'Não foi possível carregar o formulário.');
+      toast('Não foi possível carregar o formulário.', 'error');
       navigation.goBack();
     } finally {
       setLoadingInicial(false);
@@ -138,13 +139,13 @@ export function CriarEditarFormularioScreen() {
 
   const handleIncluirPergunta = async () => {
     if (!draft.texto.trim()) {
-      Alert.alert('Atenção', 'Digite o texto da pergunta.');
+      toast('Digite o texto da pergunta.', 'error');
       return;
     }
     if (precisaOpcoes) {
       const opcoesValidas = draft.opcoes.filter((o) => o.texto.trim());
       if (opcoesValidas.length < 2) {
-        Alert.alert('Atenção', 'Perguntas de escolha precisam de pelo menos 2 opções.');
+        toast('Perguntas de escolha precisam de pelo menos 2 opções.', 'error');
         return;
       }
     }
@@ -176,8 +177,9 @@ export function CriarEditarFormularioScreen() {
         const atualizado = await formulariosAdminService.adicionarPergunta(id, payload);
         setPerguntasExistentes(atualizado.pergunta ?? []);
         setDraft(PERGUNTA_VAZIA);
+        toast('Pergunta adicionada.', 'success');
       } catch (err: any) {
-        Alert.alert('Erro', err?.response?.data?.message ?? 'Não foi possível adicionar a pergunta.');
+        toast(err?.response?.data?.message ?? 'Não foi possível adicionar a pergunta.', 'error');
       } finally {
         setSaving(false);
       }
@@ -204,36 +206,34 @@ export function CriarEditarFormularioScreen() {
     }
   };
 
-  const handleRemoverPergunta = (p: PerguntaAdmin) => {
+  const handleRemoverPergunta = async (p: PerguntaAdmin) => {
     if (p.id_pergunta < 0) {
       setPerguntasExistentes((prev) => prev.filter((x) => x.id_pergunta !== p.id_pergunta));
       return;
     }
-    Alert.alert('Remover pergunta', `Deseja remover "${p.pergunta}"?`, [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Remover',
-        style: 'destructive',
-        onPress: async () => {
-          if (!id) return;
-          try {
-            const atualizado = await formulariosAdminService.removerPergunta(id, p.id_pergunta);
-            setPerguntasExistentes(atualizado.pergunta ?? []);
-          } catch (err: any) {
-            Alert.alert('Erro', err?.response?.data?.message ?? 'Não foi possível remover.');
-          }
-        },
-      },
-    ]);
+    const ok = await confirm({
+      title: 'Remover pergunta',
+      message: `Deseja remover "${p.pergunta}"?`,
+      confirmLabel: 'Remover',
+      destructive: true,
+    });
+    if (!ok || !id) return;
+    try {
+      const atualizado = await formulariosAdminService.removerPergunta(id, p.id_pergunta);
+      setPerguntasExistentes(atualizado.pergunta ?? []);
+      toast('Pergunta removida.', 'success');
+    } catch (err: any) {
+      toast(err?.response?.data?.message ?? 'Não foi possível remover.', 'error');
+    }
   };
 
   const handleConfirmar = async () => {
     if (!nome.trim()) {
-      Alert.alert('Atenção', 'O título do formulário é obrigatório.');
+      toast('O título do formulário é obrigatório.', 'error');
       return;
     }
     if (!idTipoFormulario) {
-      Alert.alert('Atenção', 'Selecione o tipo do formulário.');
+      toast('Selecione o tipo do formulário.', 'error');
       return;
     }
 
@@ -245,9 +245,8 @@ export function CriarEditarFormularioScreen() {
           descricao: descricao.trim() || undefined,
           id_tipo_formulario: idTipoFormulario,
         });
-        Alert.alert('Sucesso', 'Formulário atualizado com sucesso.', [
-          { text: 'OK', onPress: () => navigation.goBack() },
-        ]);
+        toast('Formulário atualizado com sucesso.', 'success');
+        navigation.goBack();
       } else {
         const draftPerguntas = perguntasExistentes
           .filter((p) => p.id_pergunta < 0)
@@ -259,12 +258,11 @@ export function CriarEditarFormularioScreen() {
           descricao: descricao.trim() || undefined,
           perguntas: draftPerguntas.length > 0 ? draftPerguntas : undefined,
         });
-        Alert.alert('Sucesso', 'Formulário criado com sucesso.', [
-          { text: 'OK', onPress: () => navigation.goBack() },
-        ]);
+        toast('Formulário criado com sucesso.', 'success');
+        navigation.goBack();
       }
     } catch (err: any) {
-      Alert.alert('Erro', err?.response?.data?.message ?? 'Não foi possível salvar o formulário.');
+      toast(err?.response?.data?.message ?? 'Não foi possível salvar o formulário.', 'error');
     } finally {
       setSaving(false);
     }

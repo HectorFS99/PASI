@@ -6,7 +6,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   TouchableOpacity,
-  Alert,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { useNavigation } from '@react-navigation/native';
@@ -17,7 +16,10 @@ import { InputField } from '../components/InputField';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { authService } from '../services/auth';
 import { apoioService, buscarCep } from '../services/apoio';
+import { useFeedback } from '../context/FeedbackContext';
+import { useScrollToError } from '../hooks/useScrollToError';
 import { formatCPF, formatTelefone, cleanMask } from '../utils/masks';
+import { isCpfValido, isEmailValido } from '../utils/validation';
 
 const STEPS = ['Pessoal', 'Endereço', 'Acesso'];
 const SEXO_OPTIONS = ['Masculino', 'Feminino', 'Outro'] as const;
@@ -27,6 +29,8 @@ type Genero = { id_genero: number; nome: string };
 
 export function CadastroPacienteScreen() {
   const navigation = useNavigation<NavigationProp>();
+  const { toast } = useFeedback();
+  const { scrollRef, registrarBase, registrar, scrollPara } = useScrollToError();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
 
@@ -52,6 +56,10 @@ export function CadastroPacienteScreen() {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Step 3
+  const [senha, setSenha] = useState('');
+  const [confirmarSenha, setConfirmarSenha] = useState('');
+
   useEffect(() => {
     apoioService.getGeneros().then(setGeneros).catch(() => null);
   }, []);
@@ -76,11 +84,15 @@ export function CadastroPacienteScreen() {
   const validateStep1 = () => {
     const e: Record<string, string> = {};
     if (!nome.trim()) e.nome = 'Informe o nome completo';
-    if (cleanMask(cpf).length !== 11) e.cpf = 'CPF inválido';
-    if (!email.trim() || !email.includes('@')) e.email = 'E-mail inválido';
+    if (!isCpfValido(cpf)) e.cpf = 'CPF inválido';
+    if (!isEmailValido(email)) e.email = 'E-mail inválido (ex.: nome@dominio.com)';
     if (cleanMask(tel).length < 10) e.tel = 'Telefone inválido';
     setErrors(e);
-    return Object.keys(e).length === 0;
+    if (Object.keys(e).length > 0) {
+      scrollPara(['nome', 'cpf', 'email', 'tel'].filter((k) => e[k]));
+      return false;
+    }
+    return true;
   };
 
   const handleSubmit = async () => {
@@ -115,27 +127,22 @@ export function CadastroPacienteScreen() {
         pais,
         senha,
       });
-      Alert.alert('Sucesso', 'Cadastro realizado! Faça login para continuar.', [
-        { text: 'OK', onPress: () => navigation.navigate('Login') },
-      ]);
+      toast('Cadastro realizado! Faça login para continuar.', 'success');
+      navigation.navigate('Login');
     } catch (err: any) {
       const msg = err?.response?.data?.message ?? 'Erro ao cadastrar. Tente novamente.';
-      Alert.alert('Erro', msg);
+      toast(Array.isArray(msg) ? msg[0] : msg, 'error');
     } finally {
       setLoading(false);
     }
   };
-
-  // Step 3 state declared here to avoid hooks-in-conditional
-  const [senha, setSenha] = useState('');
-  const [confirmarSenha, setConfirmarSenha] = useState('');
 
   return (
     <KeyboardAvoidingView
       className="flex-1"
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView className="flex-1 bg-white" keyboardShouldPersistTaps="handled">
+      <ScrollView ref={scrollRef} className="flex-1 bg-white" keyboardShouldPersistTaps="handled">
         {/* Header */}
         <View className="bg-primary px-6 pt-14 pb-4">
           <TouchableOpacity onPress={() => navigation.goBack()} className="mb-3 self-start p-1">
@@ -147,44 +154,52 @@ export function CadastroPacienteScreen() {
 
         <StepIndicator steps={STEPS} current={step} />
 
-        <View className="px-6 pb-10">
+        <View className="px-6 pb-10" onLayout={registrarBase}>
           {/* ── Step 1: Pessoal ── */}
           {step === 1 && (
             <>
-              <InputField
-                label="Nome completo"
-                placeholder="Seu nome completo"
-                value={nome}
-                onChangeText={setNome}
-                error={errors.nome}
-              />
-              <InputField
-                label="CPF"
-                placeholder="000.000.000-00"
-                value={cpf}
-                onChangeText={(t) => setCpf(formatCPF(t))}
-                keyboardType="numeric"
-                maxLength={14}
-                error={errors.cpf}
-              />
-              <InputField
-                label="E-mail"
-                placeholder="seuemail@exemplo.com"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                error={errors.email}
-              />
-              <InputField
-                label="Telefone"
-                placeholder="(00) 00000-0000"
-                value={tel}
-                onChangeText={(t) => setTel(formatTelefone(t))}
-                keyboardType="phone-pad"
-                maxLength={15}
-                error={errors.tel}
-              />
+              <View onLayout={registrar('nome')}>
+                <InputField
+                  label="Nome completo"
+                  placeholder="Seu nome completo"
+                  value={nome}
+                  onChangeText={setNome}
+                  error={errors.nome}
+                />
+              </View>
+              <View onLayout={registrar('cpf')}>
+                <InputField
+                  label="CPF"
+                  placeholder="000.000.000-00"
+                  value={cpf}
+                  onChangeText={(t) => setCpf(formatCPF(t))}
+                  keyboardType="numeric"
+                  maxLength={14}
+                  error={errors.cpf}
+                />
+              </View>
+              <View onLayout={registrar('email')}>
+                <InputField
+                  label="E-mail"
+                  placeholder="seuemail@exemplo.com"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  error={errors.email}
+                />
+              </View>
+              <View onLayout={registrar('tel')}>
+                <InputField
+                  label="Telefone"
+                  placeholder="(00) 00000-0000"
+                  value={tel}
+                  onChangeText={(t) => setTel(formatTelefone(t))}
+                  keyboardType="phone-pad"
+                  maxLength={15}
+                  error={errors.tel}
+                />
+              </View>
               <InputField
                 label="Data de nascimento"
                 placeholder="dd/mm/aaaa"
@@ -267,9 +282,7 @@ export function CadastroPacienteScreen() {
                 maxLength={9}
               />
               {cepLoading && (
-                <Text className="text-muted text-xs -mt-3 mb-3">
-                  Digite o CEP para autocompletar o endereço
-                </Text>
+                <Text className="text-muted text-xs -mt-3 mb-3">Buscando endereço...</Text>
               )}
               <InputField
                 label="Logradouro"

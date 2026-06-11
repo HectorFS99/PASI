@@ -5,7 +5,6 @@ import {
   Image,
   ScrollView,
   TouchableOpacity,
-  Alert,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
@@ -15,10 +14,12 @@ import { InputField } from '../components/InputField';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { authService } from '../services/auth';
 import { useAuth } from '../context/AuthContext';
+import { useFeedback } from '../context/FeedbackContext';
 
 export function LoginScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { login: authLogin } = useAuth();
+  const { toast } = useFeedback();
   const [login, setLogin] = useState('');
   const [senha, setSenha] = useState('');
   const [loading, setLoading] = useState(false);
@@ -45,9 +46,13 @@ export function LoginScreen() {
       });
       // RootNavigator detecta token e navega automaticamente
     } catch (err: any) {
+      const status = err?.response?.status;
       const msg =
-        err?.response?.data?.message ?? 'Não foi possível fazer login. Tente novamente.';
-      Alert.alert('Erro', msg);
+        status === 401
+          ? 'E-mail/CPF ou senha incorretos.'
+          : err?.response?.data?.message ?? 'Não foi possível fazer login. Tente novamente.';
+      setErrors({ login: ' ', senha: msg });
+      toast(msg, 'error');
     } finally {
       setLoading(false);
     }

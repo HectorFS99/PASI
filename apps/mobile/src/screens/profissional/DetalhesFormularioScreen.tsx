@@ -5,12 +5,12 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { ProfissionalNavProp, ProfissionalStackParamList } from '../../navigation/types';
 import { formulariosAdminService, FormularioAdmin, PerguntaAdmin } from '../../services/formularios';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useFeedback } from '../../context/FeedbackContext';
 import { formatData } from '../../utils/format';
 
 type RouteT = RouteProp<ProfissionalStackParamList, 'DetalhesFormulario'>;
@@ -80,6 +80,7 @@ function PreviewInput({ pergunta }: { pergunta: PerguntaAdmin }) {
 
 export function DetalhesFormularioScreen() {
   const navigation = useNavigation<ProfissionalNavProp>();
+  const { toast } = useFeedback();
   const { id } = useRoute<RouteT>().params;
   const [formulario, setFormulario] = useState<FormularioAdmin | null>(null);
   const [loading, setLoading] = useState(true);
@@ -89,7 +90,7 @@ export function DetalhesFormularioScreen() {
       const f = await formulariosAdminService.buscar(id);
       setFormulario(f);
     } catch {
-      Alert.alert('Erro', 'Não foi possível carregar o formulário.');
+      toast('Não foi possível carregar o formulário.', 'error');
       navigation.goBack();
     } finally {
       setLoading(false);

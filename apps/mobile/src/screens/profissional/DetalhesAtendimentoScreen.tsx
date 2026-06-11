@@ -1,23 +1,24 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useNavigation, useRoute, useFocusEffect, RouteProp } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { ProfissionalNavProp, ProfissionalStackParamList } from '../../navigation/types';
 import { StatusBadge } from '../../components/StatusBadge';
 import { atendimentosService, Atendimento } from '../../services/atendimentos';
+import { useFeedback } from '../../context/FeedbackContext';
 import { formatProtocolo, formatData, maskCpf } from '../../utils/format';
 
 type RouteT = RouteProp<ProfissionalStackParamList, 'DetalhesAtendimento'>;
 
 export function DetalhesAtendimentoScreen() {
   const navigation = useNavigation<ProfissionalNavProp>();
+  const { toast } = useFeedback();
   const { id } = useRoute<RouteT>().params;
   const [atendimento, setAtendimento] = useState<Atendimento | null>(null);
   const [loading, setLoading] = useState(true);
@@ -27,14 +28,14 @@ export function DetalhesAtendimentoScreen() {
       const a = await atendimentosService.buscar(id);
       setAtendimento(a);
     } catch {
-      Alert.alert('Erro', 'Não foi possível carregar o atendimento.');
+      toast('Não foi possível carregar o atendimento.', 'error');
       navigation.goBack();
     } finally {
       setLoading(false);
     }
   }, [id]);
 
-  useEffect(() => { load(); }, [load]);
+  useFocusEffect(useCallback(() => { load(); }, [load]));
 
   if (loading || !atendimento) {
     return (
@@ -121,7 +122,10 @@ export function DetalhesAtendimentoScreen() {
                     <Text className="text-primary text-xs font-medium">Avaliar respostas</Text>
                   </TouchableOpacity>
                 )}
-                <TouchableOpacity className="flex-1 border border-border rounded-xl py-2 items-center">
+                <TouchableOpacity
+                  onPress={() => navigation.navigate('DetalhesFormulario', { id: af.id_formulario })}
+                  className="flex-1 border border-border rounded-xl py-2 items-center"
+                >
                   <Text className="text-gray-600 text-xs">Visualizar</Text>
                 </TouchableOpacity>
               </View>

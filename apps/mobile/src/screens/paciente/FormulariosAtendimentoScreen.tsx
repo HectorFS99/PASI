@@ -1,18 +1,18 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useNavigation, useRoute, useFocusEffect, RouteProp } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { PacienteNavProp, PacienteStackParamList } from '../../navigation/types';
 import { StatusBadge } from '../../components/StatusBadge';
 import { atendimentosService, Atendimento, AtendimentoFormulario } from '../../services/atendimentos';
 import { formulariosService } from '../../services/formularios';
+import { useFeedback } from '../../context/FeedbackContext';
 import { formatProtocolo } from '../../utils/format';
 
 type RouteT = RouteProp<PacienteStackParamList, 'FormulariosAtendimento'>;
@@ -28,6 +28,7 @@ function iconeFormulario(nome?: string): IconName {
 
 export function FormulariosAtendimentoScreen() {
   const navigation = useNavigation<PacienteNavProp>();
+  const { toast } = useFeedback();
   const { idAtendimento, descricao } = useRoute<RouteT>().params;
   const [atendimento, setAtendimento] = useState<Atendimento | null>(null);
   const [loading, setLoading] = useState(true);
@@ -37,14 +38,14 @@ export function FormulariosAtendimentoScreen() {
       const a = await atendimentosService.buscar(idAtendimento);
       setAtendimento(a);
     } catch {
-      Alert.alert('Erro', 'Não foi possível carregar os formulários.');
+      toast('Não foi possível carregar os formulários.', 'error');
       navigation.goBack();
     } finally {
       setLoading(false);
     }
   }, [idAtendimento]);
 
-  useEffect(() => { load(); }, [load]);
+  useFocusEffect(useCallback(() => { load(); }, [load]));
 
   const iniciarFormulario = async (af: AtendimentoFormulario) => {
     try {
@@ -55,7 +56,7 @@ export function FormulariosAtendimentoScreen() {
         nomeFormulario: af.formulario.nome ?? 'Formulário',
       });
     } catch (err: any) {
-      Alert.alert('Erro', err?.response?.data?.message ?? 'Não foi possível iniciar o formulário.');
+      toast(err?.response?.data?.message ?? 'Não foi possível iniciar o formulário.', 'error');
     }
   };
 

@@ -99,10 +99,12 @@ export class UsuariosService {
       throw new ForbiddenException('Apenas profissionais podem listar pacientes.');
     }
     const where: Prisma.usuarioWhereInput = { id_tipo_usuario: TipoUsuario.PACIENTE };
-    if (search) {
+    if (search?.trim()) {
+      const digitos = search.replace(/\D/g, '');
       where.OR = [
-        { nome: { contains: search, mode: 'insensitive' } },
-        { cpf: { contains: search.replace(/\D/g, '') } },
+        { nome: { contains: search.trim(), mode: 'insensitive' } },
+        // Só busca por CPF quando há dígitos — senão `contains: ''` casaria com todos.
+        ...(digitos ? [{ cpf: { contains: digitos } }] : []),
       ];
     }
     return this.prisma.usuario.findMany({

@@ -5,13 +5,12 @@ import {
   FlatList,
   TouchableOpacity,
   TextInput,
-  Alert,
   ActivityIndicator,
   Modal,
   ScrollView,
   Platform,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { ProfissionalNavProp } from '../../navigation/types';
 import {
@@ -20,6 +19,7 @@ import {
   FiltrosFormulario,
 } from '../../services/formularios';
 import { apoioService } from '../../services/apoio';
+import { useFeedback } from '../../context/FeedbackContext';
 import { formatData } from '../../utils/format';
 
 type OrdenarPor = 'data_desc' | 'data_asc' | 'nome' | 'mais_respondidos';
@@ -57,6 +57,7 @@ function tipoBadgeColor(nome?: string): string {
 
 export function FormulariosListScreen() {
   const navigation = useNavigation<ProfissionalNavProp>();
+  const { toast, confirm } = useFeedback();
   const [formularios, setFormularios] = useState<FormularioAdmin[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -99,17 +100,25 @@ export function FormulariosListScreen() {
         setPage(res.page);
         setTotalPages(res.totalPages);
       } catch {
-        Alert.alert('Erro', 'Não foi possível carregar os formulários.');
+        toast('Não foi possível carregar os formulários.', 'error');
       } finally {
         setLoading(false);
       }
     },
-    [filtros, buildParams],
+    [filtros, buildParams, toast],
   );
 
-  useEffect(() => {
-    load(1, '', FILTROS_PADRAO);
-  }, []);
+  const loadRef = useRef(load);
+  loadRef.current = load;
+  const filtrosRef = useRef(filtros);
+  filtrosRef.current = filtros;
+
+  // Recarrega ao focar (ex.: ao voltar de criar/editar formulário).
+  useFocusEffect(
+    useCallback(() => {
+      loadRef.current(1, searchRef.current, filtrosRef.current);
+    }, []),
+  );
 
   const handleSearch = (text: string) => {
     setSearch(text);
@@ -126,31 +135,26 @@ export function FormulariosListScreen() {
     setFiltrosDraft(FILTROS_PADRAO);
   };
 
-  const handleDesativar = (item: FormularioAdmin) => {
-    const acao = item.ativo ? 'desativar' : 'reativar';
-    Alert.alert(
-      `${item.ativo ? 'Desativar' : 'Reativar'} formulário`,
-      `Deseja ${acao} "${item.nome}"?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: item.ativo ? 'Desativar' : 'Reativar',
-          style: item.ativo ? 'destructive' : 'default',
-          onPress: async () => {
-            try {
-              if (item.ativo) {
-                await formulariosAdminService.desativar(item.id_formulario);
-              } else {
-                await formulariosAdminService.reativar(item.id_formulario);
-              }
-              load(page, search, filtros);
-            } catch (err: any) {
-              Alert.alert('Erro', err?.response?.data?.message ?? 'Não foi possível realizar a ação.');
-            }
-          },
-        },
-      ],
-    );
+  const handleDesativar = async (item: FormularioAdmin) => {
+    const acao = item.ativo ? 'Desativar' : 'Reativar';
+    const ok = await confirm({
+      title: `${acao} formulário`,
+      message: `Deseja ${acao.toLowerCase()} "${item.nome}"?`,
+      confirmLabel: acao,
+      destructive: item.ativo,
+    });
+    if (!ok) return;
+    try {
+      if (item.ativo) {
+        await formulariosAdminService.desativar(item.id_formulario);
+      } else {
+        await formulariosAdminService.reativar(item.id_formulario);
+      }
+      toast(`Formulário ${item.ativo ? 'desativado' : 'reativado'}.`, 'success');
+      load(page, search, filtros);
+    } catch (err: any) {
+      toast(err?.response?.data?.message ?? 'Não foi possível realizar a ação.', 'error');
+    }
   };
 
   const toggleTipo = (id: number) => {

@@ -7,7 +7,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   TouchableOpacity,
-  Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NavigationProp } from '../navigation/types';
@@ -15,29 +14,29 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { InputField } from '../components/InputField';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { authService } from '../services/auth';
+import { useFeedback } from '../context/FeedbackContext';
+import { isEmailValido } from '../utils/validation';
 
 export function EsqueceuSenhaScreen() {
   const navigation = useNavigation<NavigationProp>();
+  const { toast } = useFeedback();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleEnviar = async () => {
-    if (!email.trim() || !email.includes('@')) {
-      setError('Informe um e-mail válido');
+    if (!isEmailValido(email)) {
+      setError('Informe um e-mail válido (ex.: nome@dominio.com)');
       return;
     }
     setError('');
     setLoading(true);
     try {
       await authService.esqueceuSenha(email.trim().toLowerCase());
-      Alert.alert(
-        'E-mail enviado',
-        'Se o e-mail estiver cadastrado, você receberá as instruções em breve.',
-        [{ text: 'OK', onPress: () => navigation.goBack() }],
-      );
+      toast('Se o e-mail estiver cadastrado, você receberá as instruções em breve.', 'success');
+      navigation.goBack();
     } catch {
-      Alert.alert('Erro', 'Não foi possível processar a solicitação. Tente novamente.');
+      toast('Não foi possível processar a solicitação. Tente novamente.', 'error');
     } finally {
       setLoading(false);
     }
