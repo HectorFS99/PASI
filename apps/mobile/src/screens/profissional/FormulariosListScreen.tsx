@@ -11,6 +11,7 @@ import {
   Platform,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { ProfissionalNavProp } from '../../navigation/types';
 import {
@@ -57,6 +58,7 @@ function tipoBadgeColor(nome?: string): string {
 
 export function FormulariosListScreen() {
   const navigation = useNavigation<ProfissionalNavProp>();
+  const insets = useSafeAreaInsets();
   const { toast, confirm } = useFeedback();
   const [formularios, setFormularios] = useState<FormularioAdmin[]>([]);
   const [total, setTotal] = useState(0);
@@ -227,7 +229,7 @@ export function FormulariosListScreen() {
   return (
     <View className="flex-1 bg-white">
       {/* Header */}
-      <View className="bg-primary px-5 pt-14 pb-4">
+      <View className="bg-primary px-5" style={{ paddingTop: Math.max(insets.top, 24), paddingBottom: 24 }}>
         <View className="flex-row items-center justify-between">
           <View className="flex-row items-center gap-3 flex-1">
             <TouchableOpacity
@@ -237,7 +239,7 @@ export function FormulariosListScreen() {
               <MaterialIcons name="arrow-back" size={22} color="white" />
             </TouchableOpacity>
             <View>
-              <Text className="text-white text-xl font-bold">Módulo de Formulários</Text>
+              <Text className="text-white text-base font-bold">Formulários</Text>
               <Text className="text-white/60 text-xs">
                 {total} formulário{total !== 1 ? 's' : ''} exibido{total !== 1 ? 's' : ''}
               </Text>
@@ -247,9 +249,10 @@ export function FormulariosListScreen() {
             onPress={() =>
               navigation.navigate('CriarEditarFormulario', { modo: 'criar' })
             }
-            className="w-9 h-9 rounded-full bg-green-500 items-center justify-center"
+            className="flex-row items-center gap-1 bg-white rounded-xl px-3 h-9"
           >
-            <MaterialIcons name="add" size={22} color="white" />
+            <MaterialIcons name="add" size={18} color="#0D2347" />
+            <Text className="text-primary text-sm font-semibold">Novo</Text>
           </TouchableOpacity>
         </View>
 

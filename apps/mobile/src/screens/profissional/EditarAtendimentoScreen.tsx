@@ -11,6 +11,7 @@ import {
   Platform,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ProfissionalNavProp, ProfissionalStackParamList } from '../../navigation/types';
 import { StatusBadge } from '../../components/StatusBadge';
 import { PrimaryButton } from '../../components/PrimaryButton';
@@ -25,6 +26,7 @@ type RouteT = RouteProp<ProfissionalStackParamList, 'EditarAtendimento'>;
 
 export function EditarAtendimentoScreen() {
   const navigation = useNavigation<ProfissionalNavProp>();
+  const insets = useSafeAreaInsets();
   const { toast, confirm } = useFeedback();
   const { id } = useRoute<RouteT>().params;
 
@@ -131,17 +133,14 @@ export function EditarAtendimentoScreen() {
     <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView className="flex-1 bg-white" keyboardShouldPersistTaps="handled">
         {/* Header */}
-        <View className="bg-primary px-6 pt-14 pb-5">
-          <TouchableOpacity onPress={() => navigation.goBack()} className="mb-3 self-start">
-            <MaterialIcons name="arrow-back" size={24} color="white" />
-          </TouchableOpacity>
-          <View className="flex-row items-center gap-2">
-            <Text className="text-white text-xl font-bold">Editar Atendimento</Text>
+        <View className="bg-primary px-6" style={{ paddingTop: Math.max(insets.top, 16), paddingBottom: 16 }}>
+          <View className="flex-row items-center gap-3">
+            <TouchableOpacity onPress={() => navigation.goBack()}>
+              <MaterialIcons name="arrow-back" size={24} color="white" />
+            </TouchableOpacity>
+            <Text className="text-white text-lg font-bold flex-1" numberOfLines={1}>Editar Atendimento</Text>
             <StatusBadge status={atendimento.id_situacao_atendimento} />
           </View>
-          <Text className="text-white/70 text-sm mt-1">
-            {formatProtocolo(atendimento.id_atendimento, atendimento.dt_cadastro)}
-          </Text>
         </View>
 
         <View className="px-6 pt-6 pb-10">

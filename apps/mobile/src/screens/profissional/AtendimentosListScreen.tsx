@@ -11,6 +11,7 @@ import {
   Platform,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { ProfissionalNavProp } from '../../navigation/types';
 import { StatusBadge } from '../../components/StatusBadge';
@@ -52,6 +53,7 @@ const OPCOES_ORDENACAO: { label: string; value: OrdenarPor }[] = [
 
 export function AtendimentosListScreen() {
   const navigation = useNavigation<ProfissionalNavProp>();
+  const insets = useSafeAreaInsets();
   const { openDrawer } = useDrawer();
   const { toast, confirm } = useFeedback();
   const [atendimentos, setAtendimentos] = useState<Atendimento[]>([]);
@@ -206,7 +208,7 @@ export function AtendimentosListScreen() {
   return (
     <View className="flex-1 bg-white">
       {/* Header */}
-      <View className="bg-primary px-5 pt-14 pb-4">
+      <View className="bg-primary px-5" style={{ paddingTop: Math.max(insets.top, 24), paddingBottom: 24 }}>
         <View className="flex-row items-center justify-between">
           <View className="flex-row items-center gap-3 flex-1">
             <TouchableOpacity
@@ -216,7 +218,7 @@ export function AtendimentosListScreen() {
               <MaterialIcons name="menu" size={22} color="white" />
             </TouchableOpacity>
             <View>
-              <Text className="text-white text-xl font-bold">Atendimentos</Text>
+              <Text className="text-white text-base font-bold">Atendimentos</Text>
               <Text className="text-white/60 text-xs">
                 {total} atendimento{total !== 1 ? 's' : ''} encontrado{total !== 1 ? 's' : ''}
               </Text>
@@ -224,9 +226,10 @@ export function AtendimentosListScreen() {
           </View>
           <TouchableOpacity
             onPress={() => navigation.navigate('NovoAtendimento')}
-            className="w-9 h-9 rounded-full bg-green-500 items-center justify-center"
+            className="flex-row items-center gap-1 bg-white rounded-xl px-3 h-9"
           >
-            <MaterialIcons name="add" size={22} color="white" />
+            <MaterialIcons name="add" size={18} color="#0D2347" />
+            <Text className="text-primary text-sm font-semibold">Novo</Text>
           </TouchableOpacity>
         </View>
 

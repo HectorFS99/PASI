@@ -11,6 +11,7 @@ import {
   Switch,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { ProfissionalNavProp, ProfissionalStackParamList } from '../../navigation/types';
 import {
@@ -66,6 +67,7 @@ function gerarKey() {
 
 export function CriarEditarFormularioScreen() {
   const navigation = useNavigation<ProfissionalNavProp>();
+  const insets = useSafeAreaInsets();
   const { toast, confirm } = useFeedback();
   const { id, modo } = useRoute<RouteT>().params;
   const isEditar = modo === 'editar' && !!id;
@@ -279,13 +281,15 @@ export function CriarEditarFormularioScreen() {
   return (
     <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       {/* Header */}
-      <View className="bg-primary px-6 pt-14 pb-5">
-        <TouchableOpacity onPress={() => navigation.goBack()} className="mb-3 self-start">
-          <MaterialIcons name="arrow-back" size={24} color="white" />
-        </TouchableOpacity>
-        <Text className="text-white text-lg font-bold">
-          {isEditar ? 'Editar Formulário' : 'Criar Formulário'}
-        </Text>
+      <View className="bg-primary px-6" style={{ paddingTop: Math.max(insets.top, 16), paddingBottom: 16 }}>
+        <View className="flex-row items-center gap-3">
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <MaterialIcons name="arrow-back" size={24} color="white" />
+          </TouchableOpacity>
+          <Text className="text-white text-lg font-bold">
+            {isEditar ? 'Editar Formulário' : 'Criar Formulário'}
+          </Text>
+        </View>
       </View>
 
       <ScrollView className="flex-1 bg-white" contentContainerStyle={{ padding: 20, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">

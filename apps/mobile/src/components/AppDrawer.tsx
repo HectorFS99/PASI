@@ -11,6 +11,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDrawer } from '../context/DrawerContext';
 import { useAuth } from '../context/AuthContext';
 import { useProfilePhoto } from '../context/ProfilePhotoContext';
@@ -48,6 +49,7 @@ function iniciais(nome?: string) {
 }
 
 export function AppDrawer() {
+  const insets = useSafeAreaInsets();
   const { isOpen, closeDrawer } = useDrawer();
   const { usuario, logout } = useAuth();
   const { foto } = useProfilePhoto();
@@ -116,8 +118,8 @@ export function AppDrawer() {
         }}
       >
         {/* Cabeçalho do perfil */}
-        <View className="bg-primary px-5 pt-14 pb-5">
-          <View className="flex-row items-center justify-between mb-4">
+        <View className="bg-primary px-5" style={{ paddingTop: Math.max(insets.top, 16), paddingBottom: 24 }}>
+          <View className="flex-row items-center justify-between mb-2">
             <Text className="text-white/80 text-xs font-semibold uppercase tracking-wider">
               {isProfissional ? 'Profissional' : 'Paciente'}
             </Text>

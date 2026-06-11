@@ -10,6 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ProfissionalNavProp } from '../../navigation/types';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -19,6 +20,7 @@ import { useFeedback } from '../../context/FeedbackContext';
 
 export function NovoAtendimentoScreen() {
   const navigation = useNavigation<ProfissionalNavProp>();
+  const insets = useSafeAreaInsets();
   const { toast } = useFeedback();
   const [descricao, setDescricao] = useState('');
   const [pacienteBusca, setPacienteBusca] = useState('');
@@ -83,12 +85,13 @@ export function NovoAtendimentoScreen() {
     <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView className="flex-1 bg-white" keyboardShouldPersistTaps="handled">
         {/* Header */}
-        <View className="bg-primary px-6 pt-14 pb-5">
-          <TouchableOpacity onPress={() => navigation.goBack()} className="mb-3 self-start">
-            <MaterialIcons name="arrow-back" size={24} color="white" />
-          </TouchableOpacity>
-          <Text className="text-white text-xl font-bold">Novo Atendimento</Text>
-          <Text className="text-white/70 text-sm">Preencha os dados do atendimento</Text>
+        <View className="bg-primary px-6" style={{ paddingTop: Math.max(insets.top, 16), paddingBottom: 16 }}>
+          <View className="flex-row items-center gap-3">
+            <TouchableOpacity onPress={() => navigation.goBack()}>
+              <MaterialIcons name="arrow-back" size={24} color="white" />
+            </TouchableOpacity>
+            <Text className="text-white text-lg font-bold">Novo Atendimento</Text>
+          </View>
         </View>
 
         <View className="px-6 pt-6 pb-10">

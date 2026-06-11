@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { PacienteNavProp } from '../../navigation/types';
 import { StatusBadge } from '../../components/StatusBadge';
@@ -19,6 +20,7 @@ import { formatProtocolo, formatData } from '../../utils/format';
 
 export function MeusAtendimentosScreen() {
   const navigation = useNavigation<PacienteNavProp>();
+  const insets = useSafeAreaInsets();
   const { usuario } = useAuth();
   const { openDrawer } = useDrawer();
   const { toast } = useFeedback();
@@ -117,25 +119,19 @@ export function MeusAtendimentosScreen() {
   return (
     <View className="flex-1 bg-white">
       {/* Header */}
-      <View className="bg-primary px-5 pt-14 pb-5">
-        <View className="flex-row items-center gap-3 mb-3">
+      <View className="bg-primary px-5" style={{ paddingTop: Math.max(insets.top, 24), paddingBottom: 24 }}>
+        <View className="flex-row items-center gap-3 mb-2">
           <TouchableOpacity
             onPress={openDrawer}
-            className="w-10 h-10 rounded-xl bg-white/15 items-center justify-center"
+            className="w-9 h-9 rounded-xl bg-white/15 items-center justify-center"
           >
             <MaterialIcons name="menu" size={22} color="white" />
           </TouchableOpacity>
           <View className="flex-1">
-            <Text className="text-white/70 text-xs">Olá,</Text>
-            <Text className="text-white text-sm font-semibold" numberOfLines={1}>
-              {usuario?.nome}
-            </Text>
+            <Text className="text-white text-base font-bold">Meus Atendimentos</Text>
+            <Text className="text-white/60 text-xs" numberOfLines={1}>{usuario?.nome}</Text>
           </View>
         </View>
-        <Text className="text-white text-xl font-bold">Meus Atendimentos</Text>
-        <Text className="text-white/60 text-xs mb-3">
-          Acompanhe seus atendimentos e responda formulários
-        </Text>
         <View className="flex-row items-center bg-white/15 rounded-xl px-3 h-10">
           <MaterialIcons name="search" size={18} color="rgba(255,255,255,0.6)" style={{ marginRight: 8 }} />
           <TextInput
