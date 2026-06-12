@@ -17,6 +17,12 @@ export type ProfissionalStackParamList = {
   FormulariosList: undefined;
   DetalhesFormulario: { id: number };
   CriarEditarFormulario: { id?: number; modo: 'criar' | 'editar' };
+  AvaliarFormulario: {
+    idAtendimento: number;
+    idFormulario: number;
+    nomeFormulario?: string;
+    modo: 'visualizar' | 'avaliar';
+  };
   Perfil: undefined;
 };
 

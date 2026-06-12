@@ -57,8 +57,14 @@ export class FormulariosService {
 
     const where: Prisma.formularioWhereInput = {};
 
-    if (query.search) {
-      where.nome = { contains: query.search, mode: 'insensitive' };
+    if (query.search?.trim()) {
+      // Busca sem sensibilidade a maiúsculas nem a acentos.
+      const ids = await this.idsPorBuscaSemAcento(query.search.trim());
+      if (ids) {
+        where.id_formulario = { in: ids };
+      } else {
+        where.nome = { contains: query.search.trim(), mode: 'insensitive' };
+      }
     }
     if (query.id_tipo_formulario !== undefined) {
       where.id_tipo_formulario = query.id_tipo_formulario;
@@ -66,12 +72,22 @@ export class FormulariosService {
     if (query.ativo !== undefined) {
       where.ativo = query.ativo;
     }
+    if (query.data_inicio || query.data_fim) {
+      where.dt_cadastro = {
+        ...(query.data_inicio ? { gte: new Date(query.data_inicio) } : {}),
+        ...(query.data_fim
+          ? { lte: new Date(`${query.data_fim}T23:59:59.999Z`) }
+          : {}),
+      };
+    }
     type OrderBy = Prisma.formularioOrderByWithRelationInput;
     const orderByMap: Record<string, OrderBy> = {
       [OrdenarFormularioPor.DATA_DESC]: { id_formulario: 'desc' },
       [OrdenarFormularioPor.DATA_ASC]: { id_formulario: 'asc' },
       [OrdenarFormularioPor.NOME]: { nome: 'asc' },
-      [OrdenarFormularioPor.MAIS_RESPONDIDOS]: { id_formulario: 'desc' },
+      [OrdenarFormularioPor.MAIS_RESPONDIDOS]: {
+        formulario_paciente: { _count: 'desc' },
+      },
     };
     const orderBy = orderByMap[query.ordenar_por ?? OrdenarFormularioPor.DATA_DESC];
 
@@ -261,6 +277,23 @@ export class FormulariosService {
   // ----------------------------------------------------------------
   // Helpers
   // ----------------------------------------------------------------
+  // Busca por nome/descrição ignorando maiúsculas e acentos (unaccent).
+  // Retorna null quando a extensão não está disponível (fallback Prisma).
+  private async idsPorBuscaSemAcento(search: string): Promise<number[] | null> {
+    const like = `%${search}%`;
+    try {
+      const rows = await this.prisma.$queryRaw<{ id: number }[]>`
+        SELECT id_formulario AS id
+        FROM formulario
+        WHERE unaccent(lower(coalesce(nome, ''))) LIKE unaccent(lower(${like}))
+           OR unaccent(lower(coalesce(descricao, ''))) LIKE unaccent(lower(${like}))
+      `;
+      return rows.map((r) => Number(r.id));
+    } catch {
+      return null;
+    }
+  }
+
   private montarPerguntaCreate(
     p: CreatePerguntaDto,
     idUsuario: number,

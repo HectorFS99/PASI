@@ -8,7 +8,6 @@ import {
   ActivityIndicator,
   Modal,
   ScrollView,
-  Platform,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -22,6 +21,8 @@ import {
 import { apoioService } from '../../services/apoio';
 import { useFeedback } from '../../context/FeedbackContext';
 import { formatData } from '../../utils/format';
+import { brParaIso } from '../../utils/date';
+import { DateField } from '../../components/DateField';
 
 type OrdenarPor = 'data_desc' | 'data_asc' | 'nome' | 'mais_respondidos';
 
@@ -85,8 +86,9 @@ export function FormulariosListScreen() {
       search: q || undefined,
       id_tipo_formulario: f.tiposAtivos.length === 1 ? f.tiposAtivos[0] : undefined,
       ativo: f.apenasAtivos ? true : undefined,
-      data_inicio: f.dataInicio || undefined,
-      data_fim: f.dataFim || undefined,
+      // Backend espera ISO (aaaa-mm-dd); datas incompletas são ignoradas.
+      data_inicio: brParaIso(f.dataInicio),
+      data_fim: brParaIso(f.dataFim),
       ordenar_por: f.ordenarPor,
     }),
     [],
@@ -133,8 +135,12 @@ export function FormulariosListScreen() {
     load(1, search, filtrosDraft);
   };
 
+  // Limpa filtros e ordenação, fecha o popup e recarrega a listagem padrão.
   const handleLimparFiltros = () => {
     setFiltrosDraft(FILTROS_PADRAO);
+    setFiltros(FILTROS_PADRAO);
+    setShowFiltros(false);
+    load(1, search, FILTROS_PADRAO);
   };
 
   const handleDesativar = async (item: FormularioAdmin) => {
@@ -382,25 +388,17 @@ export function FormulariosListScreen() {
               </View>
               <View className="flex-row gap-3 mb-4">
                 <View className="flex-1">
-                  <Text className="text-xs text-gray-500 mb-1">De</Text>
-                  <TextInput
-                    className="bg-gray-50 border border-border rounded-xl px-3 h-11 text-sm text-gray-800"
-                    placeholder="dd/mm/aaaa"
-                    placeholderTextColor="#A0AEC0"
+                  <DateField
+                    label="De"
                     value={filtrosDraft.dataInicio}
-                    onChangeText={(t) => setFiltrosDraft((p) => ({ ...p, dataInicio: t }))}
-                    keyboardType={Platform.OS === 'ios' ? 'numbers-and-punctuation' : 'default'}
+                    onChange={(t) => setFiltrosDraft((p) => ({ ...p, dataInicio: t }))}
                   />
                 </View>
                 <View className="flex-1">
-                  <Text className="text-xs text-gray-500 mb-1">Até</Text>
-                  <TextInput
-                    className="bg-gray-50 border border-border rounded-xl px-3 h-11 text-sm text-gray-800"
-                    placeholder="dd/mm/aaaa"
-                    placeholderTextColor="#A0AEC0"
+                  <DateField
+                    label="Até"
                     value={filtrosDraft.dataFim}
-                    onChangeText={(t) => setFiltrosDraft((p) => ({ ...p, dataFim: t }))}
-                    keyboardType={Platform.OS === 'ios' ? 'numbers-and-punctuation' : 'default'}
+                    onChange={(t) => setFiltrosDraft((p) => ({ ...p, dataFim: t }))}
                   />
                 </View>
               </View>

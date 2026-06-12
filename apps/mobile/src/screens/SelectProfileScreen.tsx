@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { NavigationProp } from '../navigation/types';
+import { FormFooter } from '../components/FormFooter';
 
 interface CardProps {
   title: string;
@@ -36,23 +37,15 @@ export function SelectProfileScreen() {
   return (
     <View className="flex-1 bg-white">
       {/* Header azul com logo */}
-      <View className="bg-primary pt-14 pb-8 rounded-b-3xl">
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          className="ml-5 mb-2 self-start w-9 h-9 rounded-xl bg-white/15 items-center justify-center"
-        >
-          <MaterialIcons name="arrow-back" size={22} color="white" />
-        </TouchableOpacity>
-        <View className="items-center">
-          <Image
-            source={require('../../assets/logo.png')}
-            style={{ width: 150, height: 150 }}
-            resizeMode="contain"
-          />
-        </View>
+      <View className="bg-primary pt-14 pb-8 rounded-b-3xl items-center">
+        <Image
+          source={require('../../assets/logo.png')}
+          style={{ width: 150, height: 150 }}
+          resizeMode="contain"
+        />
       </View>
 
-      <View className="px-6 pt-8">
+      <View className="flex-1 px-6 pt-8">
         <Text className="text-2xl font-bold text-primary text-center mb-1">
           Selecione seu perfil
         </Text>
@@ -74,6 +67,16 @@ export function SelectProfileScreen() {
           onPress={() => navigation.navigate('CadastroPaciente')}
         />
       </View>
+
+      {/* Botão Voltar fixo */}
+      <FormFooter>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          className="border border-border rounded-xl py-3 items-center"
+        >
+          <Text className="text-gray-700 text-sm font-medium">Voltar</Text>
+        </TouchableOpacity>
+      </FormFooter>
     </View>
   );
 }

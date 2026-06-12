@@ -8,6 +8,7 @@ import {
   Platform,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type ToastType = 'success' | 'error' | 'info';
 
@@ -35,16 +36,18 @@ const TOAST_STYLE: Record<ToastType, { bg: string; icon: keyof typeof MaterialIc
 };
 
 export function FeedbackProvider({ children }: { children: React.ReactNode }) {
-  // ---- Toast ----
+  const insets = useSafeAreaInsets();
+
+  // ---- Toast (exibido na parte inferior, acima dos botões de navegação) ----
   const [toastState, setToastState] = useState<{ message: string; type: ToastType } | null>(null);
   const opacity = useRef(new Animated.Value(0)).current;
-  const translateY = useRef(new Animated.Value(-24)).current;
+  const translateY = useRef(new Animated.Value(24)).current;
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const hideToast = () => {
     Animated.parallel([
       Animated.timing(opacity, { toValue: 0, duration: 180, useNativeDriver: useNative }),
-      Animated.timing(translateY, { toValue: -24, duration: 180, useNativeDriver: useNative }),
+      Animated.timing(translateY, { toValue: 24, duration: 180, useNativeDriver: useNative }),
     ]).start(({ finished }) => {
       if (finished) setToastState(null);
     });
@@ -54,7 +57,7 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
     if (timer.current) clearTimeout(timer.current);
     setToastState({ message, type });
     opacity.setValue(0);
-    translateY.setValue(-24);
+    translateY.setValue(24);
     Animated.parallel([
       Animated.timing(opacity, { toValue: 1, duration: 220, useNativeDriver: useNative }),
       Animated.timing(translateY, { toValue: 0, duration: 220, useNativeDriver: useNative }),
@@ -88,10 +91,10 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
           pointerEvents="box-none"
           style={{
             position: 'absolute',
-            top: 0,
+            // Acima da barra fixa de botões de navegação (FormFooter).
+            bottom: Math.max(insets.bottom, 12) + 76,
             left: 0,
             right: 0,
-            paddingTop: 52,
             paddingHorizontal: 16,
             alignItems: 'center',
             zIndex: 1000,

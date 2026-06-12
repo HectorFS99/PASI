@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useNavigation, useRoute, useFocusEffect, RouteProp } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { PacienteNavProp, PacienteStackParamList } from '../../navigation/types';
 import { StatusBadge } from '../../components/StatusBadge';
@@ -28,6 +29,7 @@ function iconeFormulario(nome?: string): IconName {
 
 export function FormulariosAtendimentoScreen() {
   const navigation = useNavigation<PacienteNavProp>();
+  const insets = useSafeAreaInsets();
   const { toast } = useFeedback();
   const { idAtendimento, descricao } = useRoute<RouteT>().params;
   const [atendimento, setAtendimento] = useState<Atendimento | null>(null);
@@ -79,14 +81,18 @@ export function FormulariosAtendimentoScreen() {
   return (
     <View className="flex-1 bg-white">
       {/* Header */}
-      <View className="bg-primary px-6 pt-14 pb-5">
-        <TouchableOpacity onPress={() => navigation.goBack()} className="mb-3 self-start">
-          <MaterialIcons name="arrow-back" size={24} color="white" />
-        </TouchableOpacity>
-        <Text className="text-white text-xl font-bold">Formulários</Text>
-        <Text className="text-white/70 text-sm">
-          Protocolo {formatProtocolo(idAtendimento, atendimento.dt_cadastro)}
-        </Text>
+      <View className="bg-primary px-6" style={{ paddingTop: Math.max(insets.top, 16), paddingBottom: 16 }}>
+        <View className="flex-row items-center gap-3">
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <MaterialIcons name="arrow-back" size={24} color="white" />
+          </TouchableOpacity>
+          <View className="flex-1">
+            <Text className="text-white text-lg font-bold">Formulários</Text>
+            <Text className="text-white/70 text-xs">
+              Protocolo {formatProtocolo(idAtendimento, atendimento.dt_cadastro)}
+            </Text>
+          </View>
+        </View>
       </View>
 
       <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>

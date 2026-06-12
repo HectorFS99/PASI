@@ -101,8 +101,12 @@ export class UsuariosService {
     const where: Prisma.usuarioWhereInput = { id_tipo_usuario: TipoUsuario.PACIENTE };
     if (search?.trim()) {
       const digitos = search.replace(/\D/g, '');
+      // Busca por nome sem sensibilidade a maiúsculas nem a acentos.
+      const ids = await this.idsPacientesSemAcento(search.trim());
       where.OR = [
-        { nome: { contains: search.trim(), mode: 'insensitive' } },
+        ids
+          ? { id_usuario: { in: ids } }
+          : { nome: { contains: search.trim(), mode: 'insensitive' } },
         // Só busca por CPF quando há dígitos — senão `contains: ''` casaria com todos.
         ...(digitos ? [{ cpf: { contains: digitos } }] : []),
       ];
@@ -113,6 +117,22 @@ export class UsuariosService {
       take: 20,
       orderBy: { nome: 'asc' },
     });
+  }
+
+  // Retorna null quando a extensão unaccent não está disponível (fallback Prisma).
+  private async idsPacientesSemAcento(search: string): Promise<number[] | null> {
+    const like = `%${search}%`;
+    try {
+      const rows = await this.prisma.$queryRaw<{ id: number }[]>`
+        SELECT id_usuario AS id
+        FROM usuario
+        WHERE id_tipo_usuario = ${TipoUsuario.PACIENTE}
+          AND unaccent(lower(nome)) LIKE unaccent(lower(${like}))
+      `;
+      return rows.map((r) => Number(r.id));
+    } catch {
+      return null;
+    }
   }
 
   async findById(id: number) {

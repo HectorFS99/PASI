@@ -14,6 +14,7 @@ import { NavigationProp } from '../navigation/types';
 import { StepIndicator } from '../components/StepIndicator';
 import { InputField } from '../components/InputField';
 import { PrimaryButton } from '../components/PrimaryButton';
+import { FormFooter } from '../components/FormFooter';
 import { authService } from '../services/auth';
 import { apoioService } from '../services/apoio';
 import { useFeedback } from '../context/FeedbackContext';
@@ -142,6 +143,8 @@ export function CadastroProfissionalScreen() {
                   value={nome}
                   onChangeText={setNome}
                   error={errors.nome}
+                  maxLength={70}
+                  counter
                 />
               </View>
               <View onLayout={registrar('cpf')}>
@@ -164,6 +167,8 @@ export function CadastroProfissionalScreen() {
                   keyboardType="email-address"
                   autoCapitalize="none"
                   error={errors.email}
+                  maxLength={50}
+                  counter
                 />
               </View>
               <View onLayout={registrar('tel')}>
@@ -177,7 +182,6 @@ export function CadastroProfissionalScreen() {
                   error={errors.tel}
                 />
               </View>
-              <PrimaryButton label="Próximo" onPress={handleNext} />
             </>
           )}
 
@@ -240,15 +244,6 @@ export function CadastroProfissionalScreen() {
                   Intermediário conforme sua categoria profissional.
                 </Text>
               </View>
-
-              <View className="flex-row gap-3">
-                <View className="flex-1">
-                  <PrimaryButton label="Voltar" onPress={() => setStep(1)} variant="outlined" />
-                </View>
-                <View className="flex-1">
-                  <PrimaryButton label="Próximo" onPress={handleNext} />
-                </View>
-              </View>
             </>
           )}
 
@@ -272,19 +267,35 @@ export function CadastroProfissionalScreen() {
                 secureToggle
                 error={errors.confirmarSenha}
               />
-
-              <View className="flex-row gap-3 mt-2">
-                <View className="flex-1">
-                  <PrimaryButton label="Voltar" onPress={() => setStep(2)} variant="outlined" />
-                </View>
-                <View className="flex-1">
-                  <PrimaryButton label="Cadastrar" onPress={handleSubmit} loading={loading} />
-                </View>
-              </View>
             </>
           )}
         </View>
       </ScrollView>
+
+      {/* Botões de navegação fixos */}
+      <FormFooter>
+        {step === 1 && <PrimaryButton label="Próximo" onPress={handleNext} />}
+        {step === 2 && (
+          <View className="flex-row gap-3">
+            <View className="flex-1">
+              <PrimaryButton label="Voltar" onPress={() => setStep(1)} variant="outlined" />
+            </View>
+            <View className="flex-1">
+              <PrimaryButton label="Próximo" onPress={handleNext} />
+            </View>
+          </View>
+        )}
+        {step === 3 && (
+          <View className="flex-row gap-3">
+            <View className="flex-1">
+              <PrimaryButton label="Voltar" onPress={() => setStep(2)} variant="outlined" />
+            </View>
+            <View className="flex-1">
+              <PrimaryButton label="Cadastrar" onPress={handleSubmit} loading={loading} />
+            </View>
+          </View>
+        )}
+      </FormFooter>
     </KeyboardAvoidingView>
   );
 }

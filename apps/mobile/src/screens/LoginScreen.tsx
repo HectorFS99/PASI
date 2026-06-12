@@ -65,10 +65,10 @@ export function LoginScreen() {
     >
       <ScrollView className="flex-1 bg-white" keyboardShouldPersistTaps="handled">
         {/* Header */}
-        <View className="bg-primary items-center pt-16 pb-10 px-6">
+        <View className="bg-primary items-center pt-16 pb-10 px-6 rounded-b-3xl">
           <Image
             source={require('../../assets/logo.png')}
-            style={{ width: 180, height: 180 }}
+            style={{ width: 150, height: 150 }}
             resizeMode="contain"
           />
         </View>

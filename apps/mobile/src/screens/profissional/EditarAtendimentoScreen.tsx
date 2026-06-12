@@ -15,12 +15,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ProfissionalNavProp, ProfissionalStackParamList } from '../../navigation/types';
 import { StatusBadge } from '../../components/StatusBadge';
 import { PrimaryButton } from '../../components/PrimaryButton';
+import { FormFooter } from '../../components/FormFooter';
 import { FormListSkeleton } from '../../components/Skeleton';
 import { MaterialIcons } from '@expo/vector-icons';
 import { atendimentosService, Atendimento } from '../../services/atendimentos';
 import { formulariosService, FormularioItem } from '../../services/formularios';
 import { useFeedback } from '../../context/FeedbackContext';
 import { formatProtocolo } from '../../utils/format';
+import { contemTexto } from '../../utils/text';
 
 type RouteT = RouteProp<ProfissionalStackParamList, 'EditarAtendimento'>;
 
@@ -65,7 +67,10 @@ export function EditarAtendimentoScreen() {
     setFormDisp([]);
     setModalLoading(true);
     setModalVisible(true);
-    const res = await formulariosService.listar({ ativo: true }).catch(() => ({ data: [] }));
+    // limit alto para a paginação não esconder formulários disponíveis.
+    const res = await formulariosService
+      .listar({ ativo: true, limit: 100 })
+      .catch(() => ({ data: [] }));
     const jaAtrib = new Set(atendimento?.atendimento_formulario.map((af) => af.id_formulario) ?? []);
     setFormDisp(res.data.filter((f) => !jaAtrib.has(f.id_formulario)));
     setModalLoading(false);
@@ -125,9 +130,8 @@ export function EditarAtendimentoScreen() {
   }
 
   const isCriado = atendimento.id_situacao_atendimento === 1;
-  const formsFiltrados = formDisp.filter(
-    (f) => !formBusca || f.nome?.toLowerCase().includes(formBusca.toLowerCase()),
-  );
+  // Busca local sem sensibilidade a maiúsculas/acentos.
+  const formsFiltrados = formDisp.filter((f) => contemTexto(f.nome, formBusca));
 
   return (
     <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -138,8 +142,8 @@ export function EditarAtendimentoScreen() {
             <TouchableOpacity onPress={() => navigation.goBack()}>
               <MaterialIcons name="arrow-back" size={24} color="white" />
             </TouchableOpacity>
-            <Text className="text-white text-lg font-bold flex-1" numberOfLines={1}>Editar Atendimento</Text>
-            <StatusBadge status={atendimento.id_situacao_atendimento} />
+            <Text className="text-white text-lg font-bold flex-1" numberOfLines={1}>Alterar Atendimento</Text>
+            <StatusBadge status={atendimento.id_situacao_atendimento} tooltip />
           </View>
         </View>
 
@@ -147,14 +151,16 @@ export function EditarAtendimentoScreen() {
           {/* Descrição */}
           <Text className="text-sm font-medium text-gray-700 mb-1">Descrição</Text>
           <TextInput
-            className="bg-input-bg border border-border rounded-xl px-4 py-3 text-sm text-gray-800 mb-4"
+            className="bg-input-bg border border-border rounded-xl px-4 py-3 text-sm text-gray-800"
             placeholder="Descrição do atendimento..."
             placeholderTextColor="#A0AEC0"
             value={descricao}
             onChangeText={setDescricao}
             multiline
             numberOfLines={3}
+            maxLength={150}
           />
+          <Text className="text-muted text-xs text-right mt-1 mb-4">{descricao.length}/150</Text>
 
           {/* Paciente */}
           <Text className="text-sm font-medium text-gray-700 mb-1">Paciente</Text>
@@ -192,7 +198,7 @@ export function EditarAtendimentoScreen() {
                     </Text>
                   </View>
                   <View className="items-end gap-1">
-                    <StatusBadge status={situacaoId} variant="formulario" />
+                    <StatusBadge status={situacaoId} variant="formulario" tooltip />
                     {isCriado && (
                       <TouchableOpacity onPress={() => removerFormulario(af.id_formulario)}>
                         <MaterialIcons name="close" size={18} color="#F87171" />
@@ -200,36 +206,36 @@ export function EditarAtendimentoScreen() {
                     )}
                   </View>
                 </View>
-                <View className="flex-row gap-2">
-                  {situacaoId === 2 && (
-                    <TouchableOpacity
-                      onPress={() => navigation.navigate('DetalhesAtendimento', { id: atendimento.id_atendimento })}
-                      className="flex-1 border border-primary rounded-xl py-2 items-center"
-                    >
-                      <Text className="text-primary text-xs font-medium">Avaliar respostas</Text>
-                    </TouchableOpacity>
-                  )}
-                  <TouchableOpacity
-                    onPress={() => navigation.navigate('DetalhesAtendimento', { id: atendimento.id_atendimento })}
-                    className="flex-1 border border-border rounded-xl py-2 items-center"
-                  >
-                    <Text className="text-gray-600 text-xs">Visualizar detalhes</Text>
-                  </TouchableOpacity>
-                </View>
+                <TouchableOpacity
+                  onPress={() =>
+                    navigation.navigate('AvaliarFormulario', {
+                      idAtendimento: atendimento.id_atendimento,
+                      idFormulario: af.id_formulario,
+                      nomeFormulario: af.formulario.nome,
+                      modo: 'visualizar',
+                    })
+                  }
+                  className="border border-border rounded-xl py-2 items-center"
+                >
+                  <Text className="text-gray-600 text-xs">Visualizar detalhes</Text>
+                </TouchableOpacity>
               </View>
             );
           })}
-
-          <View className="flex-row gap-3 mt-4">
-            <View className="flex-1">
-              <PrimaryButton label="Cancelar" onPress={() => navigation.goBack()} variant="outlined" />
-            </View>
-            <View className="flex-1">
-              <PrimaryButton label="Salvar alterações" onPress={salvar} loading={saving} />
-            </View>
-          </View>
         </View>
       </ScrollView>
+
+      {/* Botões fixos */}
+      <FormFooter>
+        <View className="flex-row gap-3">
+          <View className="flex-1">
+            <PrimaryButton label="Cancelar" onPress={() => navigation.goBack()} variant="outlined" />
+          </View>
+          <View className="flex-1">
+            <PrimaryButton label="Salvar alterações" onPress={salvar} loading={saving} />
+          </View>
+        </View>
+      </FormFooter>
 
       {/* Modal adicionar formulários */}
       <Modal visible={modalVisible} transparent animationType="slide">

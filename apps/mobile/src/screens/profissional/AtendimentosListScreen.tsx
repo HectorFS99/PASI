@@ -8,19 +8,20 @@ import {
   ActivityIndicator,
   Modal,
   ScrollView,
-  Platform,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { ProfissionalNavProp } from '../../navigation/types';
 import { StatusBadge } from '../../components/StatusBadge';
+import { DateField } from '../../components/DateField';
 import { atendimentosService, Atendimento } from '../../services/atendimentos';
 import { useDrawer } from '../../context/DrawerContext';
 import { useFeedback } from '../../context/FeedbackContext';
 import { formatProtocolo, formatData } from '../../utils/format';
+import { brParaIso } from '../../utils/date';
 
-type OrdenarPor = 'data_desc' | 'data_asc' | 'paciente';
+type OrdenarPor = 'data_desc' | 'data_asc' | 'paciente' | 'situacao';
 
 interface Filtros {
   situacoes: number[];
@@ -49,6 +50,7 @@ const OPCOES_ORDENACAO: { label: string; value: OrdenarPor }[] = [
   { label: 'Data de cadastro (mais recente)', value: 'data_desc' },
   { label: 'Data de cadastro (mais antiga)', value: 'data_asc' },
   { label: 'Nome do paciente', value: 'paciente' },
+  { label: 'Situação do atendimento', value: 'situacao' },
 ];
 
 export function AtendimentosListScreen() {
@@ -75,8 +77,9 @@ export function AtendimentosListScreen() {
       page: p,
       search: q || undefined,
       situacoes: f.situacoes.length > 0 ? f.situacoes.join(',') : undefined,
-      data_inicio: f.dataInicio || undefined,
-      data_fim: f.dataFim || undefined,
+      // Backend espera ISO (aaaa-mm-dd); datas incompletas são ignoradas.
+      data_inicio: brParaIso(f.dataInicio),
+      data_fim: brParaIso(f.dataFim),
       ordenar_por: f.ordenarPor,
     }),
     [],
@@ -121,8 +124,12 @@ export function AtendimentosListScreen() {
     load(1, search, filtrosDraft);
   };
 
+  // Limpa filtros e ordenação, fecha o popup e recarrega a listagem padrão.
   const handleLimparFiltros = () => {
     setFiltrosDraft(FILTROS_PADRAO);
+    setFiltros(FILTROS_PADRAO);
+    setShowFiltros(false);
+    load(1, search, FILTROS_PADRAO);
   };
 
   const handleEncerrar = async (id: number) => {
@@ -184,13 +191,7 @@ export function AtendimentosListScreen() {
             onPress={() => navigation.navigate('EditarAtendimento', { id: item.id_atendimento })}
             className="bg-primary/10 px-3 py-1.5 rounded-xl"
           >
-            <Text className="text-primary text-xs font-medium">Editar</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => navigation.navigate('EditarAtendimento', { id: item.id_atendimento })}
-            className="bg-primary/10 px-3 py-1.5 rounded-xl"
-          >
-            <Text className="text-primary text-xs font-medium">Atribuir</Text>
+            <Text className="text-primary text-xs font-medium">Alterar</Text>
           </TouchableOpacity>
           {canClose && (
             <TouchableOpacity
@@ -338,25 +339,17 @@ export function AtendimentosListScreen() {
               </View>
               <View className="flex-row gap-3 mb-4">
                 <View className="flex-1">
-                  <Text className="text-xs text-gray-500 mb-1">De</Text>
-                  <TextInput
-                    className="bg-gray-50 border border-border rounded-xl px-3 h-11 text-sm text-gray-800"
-                    placeholder="dd/mm/aaaa"
-                    placeholderTextColor="#A0AEC0"
+                  <DateField
+                    label="De"
                     value={filtrosDraft.dataInicio}
-                    onChangeText={(t) => setFiltrosDraft((p) => ({ ...p, dataInicio: t }))}
-                    keyboardType={Platform.OS === 'ios' ? 'numbers-and-punctuation' : 'default'}
+                    onChange={(t) => setFiltrosDraft((p) => ({ ...p, dataInicio: t }))}
                   />
                 </View>
                 <View className="flex-1">
-                  <Text className="text-xs text-gray-500 mb-1">Até</Text>
-                  <TextInput
-                    className="bg-gray-50 border border-border rounded-xl px-3 h-11 text-sm text-gray-800"
-                    placeholder="dd/mm/aaaa"
-                    placeholderTextColor="#A0AEC0"
+                  <DateField
+                    label="Até"
                     value={filtrosDraft.dataFim}
-                    onChangeText={(t) => setFiltrosDraft((p) => ({ ...p, dataFim: t }))}
-                    keyboardType={Platform.OS === 'ios' ? 'numbers-and-punctuation' : 'default'}
+                    onChange={(t) => setFiltrosDraft((p) => ({ ...p, dataFim: t }))}
                   />
                 </View>
               </View>

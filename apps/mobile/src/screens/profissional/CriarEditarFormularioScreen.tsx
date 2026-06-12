@@ -21,6 +21,7 @@ import {
   CriarPerguntaPayload,
 } from '../../services/formularios';
 import { apoioService } from '../../services/apoio';
+import { FormFooter } from '../../components/FormFooter';
 import { useFeedback } from '../../context/FeedbackContext';
 
 type RouteT = RouteProp<ProfissionalStackParamList, 'CriarEditarFormulario'>;
@@ -317,16 +318,18 @@ export function CriarEditarFormularioScreen() {
 
         <Text className="text-xs text-gray-500 mb-1">Título do formulário *</Text>
         <TextInput
-          className="bg-input-bg border border-border rounded-xl px-4 h-12 text-sm text-gray-800 mb-4"
+          className="bg-input-bg border border-border rounded-xl px-4 h-12 text-sm text-gray-800"
           placeholder="Ex: Avaliação Social Inicial"
           placeholderTextColor="#A0AEC0"
           value={nome}
           onChangeText={setNome}
+          maxLength={50}
         />
+        <Text className="text-muted text-xs text-right mt-1 mb-4">{nome.length}/50</Text>
 
         <Text className="text-xs text-gray-500 mb-1">Descrição</Text>
         <TextInput
-          className="bg-input-bg border border-border rounded-xl px-4 py-3 text-sm text-gray-800 mb-5"
+          className="bg-input-bg border border-border rounded-xl px-4 py-3 text-sm text-gray-800"
           placeholder="Descreva o objetivo deste formulário..."
           placeholderTextColor="#A0AEC0"
           value={descricao}
@@ -334,7 +337,9 @@ export function CriarEditarFormularioScreen() {
           multiline
           numberOfLines={3}
           textAlignVertical="top"
+          maxLength={500}
         />
+        <Text className="text-muted text-xs text-right mt-1 mb-5">{descricao.length}/500</Text>
 
         {/* ---- Perguntas Existentes ---- */}
         {perguntasExistentes.length > 0 && (
@@ -371,14 +376,16 @@ export function CriarEditarFormularioScreen() {
 
         <Text className="text-xs text-gray-500 mb-1">Texto da pergunta *</Text>
         <TextInput
-          className="bg-input-bg border border-border rounded-xl px-4 py-3 text-sm text-gray-800 mb-4"
+          className="bg-input-bg border border-border rounded-xl px-4 py-3 text-sm text-gray-800"
           placeholder="Digite a pergunta..."
           placeholderTextColor="#A0AEC0"
           value={draft.texto}
           onChangeText={(t) => setDraftField('texto', t)}
           multiline
           textAlignVertical="top"
+          maxLength={500}
         />
+        <Text className="text-muted text-xs text-right mt-1 mb-4">{draft.texto.length}/500</Text>
 
         <Text className="text-xs text-gray-500 mb-2">Tipo de resposta *</Text>
         <View className="flex-row flex-wrap gap-2 mb-4">
@@ -480,6 +487,7 @@ export function CriarEditarFormularioScreen() {
                     placeholderTextColor="#A0AEC0"
                     value={op.texto}
                     onChangeText={(t) => updateOpcao(op.key, t)}
+                    maxLength={255}
                   />
                   {draft.opcoes.length > 2 && (
                     <TouchableOpacity onPress={() => removeOpcao(op.key)} className="ml-2 p-1">
@@ -554,7 +562,10 @@ export function CriarEditarFormularioScreen() {
           )}
         </TouchableOpacity>
 
-        {/* Botões Cancelar / Confirmar */}
+      </ScrollView>
+
+      {/* Botões Cancelar / Confirmar fixos */}
+      <FormFooter>
         <View className="flex-row gap-3">
           <TouchableOpacity
             onPress={() => navigation.goBack()}
@@ -576,7 +587,7 @@ export function CriarEditarFormularioScreen() {
             )}
           </TouchableOpacity>
         </View>
-      </ScrollView>
+      </FormFooter>
     </KeyboardAvoidingView>
   );
 }

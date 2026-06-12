@@ -13,6 +13,7 @@ export enum OrdenarAtendimentoPor {
   DATA_DESC = 'data_desc',
   DATA_ASC = 'data_asc',
   PACIENTE = 'paciente',
+  SITUACAO = 'situacao',
 }
 
 export class QueryAtendimentoDto {

@@ -65,15 +65,21 @@ export class AtendimentosService {
       where.id_usuario_paciente = user.id_usuario;
     }
 
-    if (query.search) {
-      where.OR = [
-        { descricao: { contains: query.search, mode: 'insensitive' } },
-        {
-          usuario_atendimento_id_usuario_pacienteTousuario: {
-            nome: { contains: query.search, mode: 'insensitive' },
+    if (query.search?.trim()) {
+      // Busca sem sensibilidade a maiúsculas nem a acentos.
+      const ids = await this.idsPorBuscaSemAcento(query.search.trim());
+      if (ids) {
+        where.id_atendimento = { in: ids };
+      } else {
+        where.OR = [
+          { descricao: { contains: query.search.trim(), mode: 'insensitive' } },
+          {
+            usuario_atendimento_id_usuario_pacienteTousuario: {
+              nome: { contains: query.search.trim(), mode: 'insensitive' },
+            },
           },
-        },
-      ];
+        ];
+      }
     }
 
     if (query.situacoes) {
@@ -100,6 +106,7 @@ export class AtendimentosService {
       [OrdenarAtendimentoPor.PACIENTE]: {
         usuario_atendimento_id_usuario_pacienteTousuario: { nome: 'asc' },
       },
+      [OrdenarAtendimentoPor.SITUACAO]: { id_situacao_atendimento: 'asc' },
     };
     const orderBy = orderByMap[query.ordenar_por ?? OrdenarAtendimentoPor.DATA_DESC];
 
@@ -294,6 +301,24 @@ export class AtendimentosService {
   // ----------------------------------------------------------------
   // Helpers
   // ----------------------------------------------------------------
+  // Busca por descrição/nome do paciente ignorando maiúsculas e acentos.
+  // Retorna null quando a extensão unaccent não está disponível.
+  private async idsPorBuscaSemAcento(search: string): Promise<number[] | null> {
+    const like = `%${search}%`;
+    try {
+      const rows = await this.prisma.$queryRaw<{ id: number }[]>`
+        SELECT a.id_atendimento AS id
+        FROM atendimento a
+        JOIN usuario u ON u.id_usuario = a.id_usuario_paciente
+        WHERE unaccent(lower(coalesce(a.descricao, ''))) LIKE unaccent(lower(${like}))
+           OR unaccent(lower(u.nome)) LIKE unaccent(lower(${like}))
+      `;
+      return rows.map((r) => Number(r.id));
+    } catch {
+      return null;
+    }
+  }
+
   private mudarSituacao(id: number, idSituacao: number) {
     return this.prisma.atendimento.update({
       where: { id_atendimento: id },

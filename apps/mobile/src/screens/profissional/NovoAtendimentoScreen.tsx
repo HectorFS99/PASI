@@ -13,10 +13,12 @@ import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ProfissionalNavProp } from '../../navigation/types';
 import { PrimaryButton } from '../../components/PrimaryButton';
+import { FormFooter } from '../../components/FormFooter';
 import { MaterialIcons } from '@expo/vector-icons';
 import { atendimentosService, Paciente } from '../../services/atendimentos';
 import { formulariosService, FormularioItem } from '../../services/formularios';
 import { useFeedback } from '../../context/FeedbackContext';
+import { contemTexto } from '../../utils/text';
 
 export function NovoAtendimentoScreen() {
   const navigation = useNavigation<ProfissionalNavProp>();
@@ -33,7 +35,11 @@ export function NovoAtendimentoScreen() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    formulariosService.listar({ ativo: true }).then((r) => setFormularios(r.data)).catch(() => null);
+    // limit alto para a paginação não esconder formulários disponíveis.
+    formulariosService
+      .listar({ ativo: true, limit: 100 })
+      .then((r) => setFormularios(r.data))
+      .catch(() => null);
   }, []);
 
   const buscarPacientes = async (q: string) => {
@@ -59,9 +65,15 @@ export function NovoAtendimentoScreen() {
     });
   };
 
-  const formsFiltrados = formularios.filter(
-    (f) => !formBusca || f.nome?.toLowerCase().includes(formBusca.toLowerCase()),
-  );
+  const limparPaciente = () => {
+    setPacienteSelecionado(null);
+    setPacienteBusca('');
+    setPacientes([]);
+    setShowPacientes(false);
+  };
+
+  // Busca local sem sensibilidade a maiúsculas/acentos.
+  const formsFiltrados = formularios.filter((f) => contemTexto(f.nome, formBusca));
 
   const handleConfirmar = async () => {
     if (!pacienteSelecionado) { toast('Selecione um paciente.', 'error'); return; }
@@ -98,14 +110,16 @@ export function NovoAtendimentoScreen() {
           {/* Descrição */}
           <Text className="text-sm font-medium text-gray-700 mb-1">Descrição</Text>
           <TextInput
-            className="bg-input-bg border border-border rounded-xl px-4 py-3 text-sm text-gray-800 mb-4"
+            className="bg-input-bg border border-border rounded-xl px-4 py-3 text-sm text-gray-800"
             placeholder="Descreva brevemente o motivo do atendimento..."
             placeholderTextColor="#A0AEC0"
             value={descricao}
             onChangeText={setDescricao}
             multiline
             numberOfLines={3}
+            maxLength={150}
           />
+          <Text className="text-muted text-xs text-right mt-1 mb-4">{descricao.length}/150</Text>
 
           {/* Paciente */}
           <Text className="text-sm font-medium text-gray-700 mb-1">Paciente</Text>
@@ -135,11 +149,19 @@ export function NovoAtendimentoScreen() {
             </View>
           )}
           {pacienteSelecionado && !showPacientes && (
-            <View className="bg-success-bg border border-success-border rounded-xl px-4 py-2 mb-4">
-              <View className="flex-row items-center gap-1">
+            <View className="bg-success-bg border border-success-border rounded-xl px-4 py-2 mb-4 flex-row items-center">
+              <View className="flex-row items-center gap-1 flex-1">
                 <MaterialIcons name="check" size={14} color="#276749" />
-                <Text className="text-success-text text-xs">{pacienteSelecionado.nome}</Text>
+                <Text className="text-success-text text-xs" numberOfLines={1}>
+                  {pacienteSelecionado.nome}
+                </Text>
               </View>
+              <TouchableOpacity
+                onPress={limparPaciente}
+                className="w-6 h-6 items-center justify-center ml-2"
+              >
+                <MaterialIcons name="close" size={16} color="#276749" />
+              </TouchableOpacity>
             </View>
           )}
 
@@ -173,17 +195,20 @@ export function NovoAtendimentoScreen() {
               </TouchableOpacity>
             );
           })}
-
-          <View className="flex-row gap-3 mt-6">
-            <View className="flex-1">
-              <PrimaryButton label="Cancelar" onPress={() => navigation.goBack()} variant="outlined" />
-            </View>
-            <View className="flex-1">
-              <PrimaryButton label="Confirmar" onPress={handleConfirmar} loading={loading} />
-            </View>
-          </View>
         </View>
       </ScrollView>
+
+      {/* Botões fixos */}
+      <FormFooter>
+        <View className="flex-row gap-3">
+          <View className="flex-1">
+            <PrimaryButton label="Cancelar" onPress={() => navigation.goBack()} variant="outlined" />
+          </View>
+          <View className="flex-1">
+            <PrimaryButton label="Confirmar" onPress={handleConfirmar} loading={loading} />
+          </View>
+        </View>
+      </FormFooter>
     </KeyboardAvoidingView>
   );
 }

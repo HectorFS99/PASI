@@ -14,6 +14,7 @@ import { DetalhesAtendimentoScreen } from '../screens/profissional/DetalhesAtend
 import { FormulariosListScreen } from '../screens/profissional/FormulariosListScreen';
 import { DetalhesFormularioScreen } from '../screens/profissional/DetalhesFormularioScreen';
 import { CriarEditarFormularioScreen } from '../screens/profissional/CriarEditarFormularioScreen';
+import { AvaliarFormularioScreen } from '../screens/profissional/AvaliarFormularioScreen';
 
 import { MeusAtendimentosScreen } from '../screens/paciente/MeusAtendimentosScreen';
 import { FormulariosAtendimentoScreen } from '../screens/paciente/FormulariosAtendimentoScreen';
@@ -34,6 +35,7 @@ function ProfissionalNavigator() {
       <ProfStack.Screen name="FormulariosList" component={FormulariosListScreen} />
       <ProfStack.Screen name="DetalhesFormulario" component={DetalhesFormularioScreen} />
       <ProfStack.Screen name="CriarEditarFormulario" component={CriarEditarFormularioScreen} />
+      <ProfStack.Screen name="AvaliarFormulario" component={AvaliarFormularioScreen} />
       <ProfStack.Screen name="Perfil" component={PerfilScreen} />
     </ProfStack.Navigator>
   );

@@ -11,16 +11,19 @@ import {
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { InputField } from '../components/InputField';
 import { PrimaryButton } from '../components/PrimaryButton';
+import { FormFooter } from '../components/FormFooter';
+import { EnderecoFields, EnderecoValues } from '../components/EnderecoFields';
 import { useAuth } from '../context/AuthContext';
 import { useProfilePhoto } from '../context/ProfilePhotoContext';
 import { useFeedback } from '../context/FeedbackContext';
 import { useScrollToError } from '../hooks/useScrollToError';
 import { usuariosService, AtualizarPerfilPayload } from '../services/usuarios';
-import { apoioService, buscarCep } from '../services/apoio';
+import { apoioService } from '../services/apoio';
 import { formatTelefone, cleanMask } from '../utils/masks';
 import { isEmailValido } from '../utils/validation';
 import { maskCpf } from '../utils/format';
@@ -55,6 +58,7 @@ function iniciais(nome?: string) {
 
 export function PerfilScreen() {
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const { usuario, updateUsuario } = useAuth();
   const { foto, setFoto } = useProfilePhoto();
   const { toast } = useFeedback();
@@ -65,7 +69,6 @@ export function PerfilScreen() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [generos, setGeneros] = useState<Genero[]>([]);
-  const [cepLoading, setCepLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Campos
@@ -85,6 +88,18 @@ export function PerfilScreen() {
   const [cidade, setCidade] = useState('');
   const [estado, setEstado] = useState('');
   const [pais, setPais] = useState('');
+
+  const endereco: EnderecoValues = { cep, logradouro, numero, complemento, bairro, cidade, estado, pais };
+  const setEndereco = (patch: Partial<EnderecoValues>) => {
+    if (patch.cep !== undefined) setCep(patch.cep);
+    if (patch.logradouro !== undefined) setLogradouro(patch.logradouro);
+    if (patch.numero !== undefined) setNumero(patch.numero);
+    if (patch.complemento !== undefined) setComplemento(patch.complemento);
+    if (patch.bairro !== undefined) setBairro(patch.bairro);
+    if (patch.cidade !== undefined) setCidade(patch.cidade);
+    if (patch.estado !== undefined) setEstado(patch.estado);
+    if (patch.pais !== undefined) setPais(patch.pais);
+  };
 
   useEffect(() => {
     apoioService.getGeneros().then(setGeneros).catch(() => null);
@@ -114,23 +129,6 @@ export function PerfilScreen() {
       })
       .finally(() => setLoading(false));
   }, []);
-
-  const handleCepChange = async (value: string) => {
-    const masked = value.replace(/\D/g, '').slice(0, 8);
-    const formatted = masked.length > 5 ? `${masked.slice(0, 5)}-${masked.slice(5)}` : masked;
-    setCep(formatted);
-    if (masked.length === 8) {
-      setCepLoading(true);
-      const data = await buscarCep(masked).catch(() => null);
-      if (data) {
-        setLogradouro(data.logradouro);
-        setBairro(data.bairro);
-        setCidade(data.localidade);
-        setEstado(data.uf);
-      }
-      setCepLoading(false);
-    }
-  };
 
   // Pode ser chamada quantas vezes o usuário quiser.
   const escolherFoto = async () => {
@@ -162,6 +160,10 @@ export function PerfilScreen() {
     if (!nome.trim()) e.nome = 'Informe o nome completo';
     if (!isEmailValido(email)) e.email = 'E-mail inválido (ex.: nome@dominio.com)';
     if (cleanMask(tel).length < 10) e.tel = 'Telefone inválido';
+    if (!isProfissional) {
+      if (cleanMask(cep).length !== 8) e.cep = 'Informe um CEP válido';
+      if (!numero.trim()) e.numero = 'Informe o número';
+    }
     setErrors(e);
     if (Object.keys(e).length > 0) {
       scrollPara(['nome', 'email', 'tel'].filter((k) => e[k]));
@@ -214,11 +216,13 @@ export function PerfilScreen() {
   return (
     <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       {/* Header */}
-      <View className="bg-primary px-6 pt-14 pb-5">
-        <TouchableOpacity onPress={() => navigation.goBack()} className="mb-3 self-start">
-          <MaterialIcons name="arrow-back" size={24} color="white" />
-        </TouchableOpacity>
-        <Text className="text-white text-lg font-bold">Meu Perfil</Text>
+      <View className="bg-primary px-6" style={{ paddingTop: Math.max(insets.top, 16), paddingBottom: 16 }}>
+        <View className="flex-row items-center gap-3">
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <MaterialIcons name="arrow-back" size={24} color="white" />
+          </TouchableOpacity>
+          <Text className="text-white text-lg font-bold">Meu Perfil</Text>
+        </View>
       </View>
 
       <ScrollView
@@ -255,7 +259,7 @@ export function PerfilScreen() {
           <Text className="text-primary font-bold text-sm mb-3">Dados pessoais</Text>
 
           <View onLayout={registrar('nome')}>
-            <InputField label="Nome completo" value={nome} onChangeText={setNome} error={errors.nome} />
+            <InputField label="Nome completo" value={nome} onChangeText={setNome} error={errors.nome} maxLength={70} counter />
           </View>
 
           {/* CPF — somente leitura */}
@@ -276,6 +280,8 @@ export function PerfilScreen() {
               keyboardType="email-address"
               autoCapitalize="none"
               error={errors.email}
+              maxLength={50}
+              counter
             />
           </View>
           <View onLayout={registrar('tel')}>
@@ -345,46 +351,18 @@ export function PerfilScreen() {
         {!isProfissional && (
           <>
             <Text className="text-primary font-bold text-sm mb-3 mt-2">Endereço</Text>
-
-            <InputField
-              label="CEP"
-              placeholder="00000-000"
-              value={cep}
-              onChangeText={handleCepChange}
-              keyboardType="numeric"
-              maxLength={9}
+            <EnderecoFields
+              values={endereco}
+              onChange={setEndereco}
+              errors={{ cep: errors.cep, numero: errors.numero }}
             />
-            {cepLoading && <Text className="text-muted text-xs -mt-3 mb-3">Buscando endereço...</Text>}
-
-            <InputField label="Logradouro" value={logradouro} onChangeText={setLogradouro} />
-            <View className="flex-row gap-3">
-              <View className="flex-1">
-                <InputField label="Número" value={numero} onChangeText={setNumero} keyboardType="numeric" maxLength={10} />
-              </View>
-              <View className="flex-1">
-                <InputField label="Complemento" value={complemento} onChangeText={setComplemento} maxLength={15} />
-              </View>
-            </View>
-            <InputField label="Bairro" value={bairro} onChangeText={setBairro} />
-            <View className="flex-row gap-3">
-              <View className="flex-1">
-                <InputField label="Cidade" value={cidade} onChangeText={setCidade} />
-              </View>
-              <View className="w-20">
-                <InputField
-                  label="Estado"
-                  value={estado}
-                  onChangeText={(t) => setEstado(t.toUpperCase().slice(0, 2))}
-                  maxLength={2}
-                />
-              </View>
-            </View>
-            <InputField label="País" value={pais} onChangeText={setPais} />
           </>
         )}
+      </ScrollView>
 
-        {/* Botões */}
-        <View className="flex-row gap-3 mt-4">
+      {/* Botões fixos */}
+      <FormFooter>
+        <View className="flex-row gap-3">
           <View className="flex-1">
             <PrimaryButton label="Cancelar" onPress={() => navigation.goBack()} variant="outlined" />
           </View>
@@ -392,7 +370,7 @@ export function PerfilScreen() {
             <PrimaryButton label="Salvar" onPress={handleSalvar} loading={saving} />
           </View>
         </View>
-      </ScrollView>
+      </FormFooter>
     </KeyboardAvoidingView>
   );
 }

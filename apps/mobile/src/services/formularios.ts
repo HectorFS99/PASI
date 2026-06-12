@@ -71,7 +71,7 @@ export interface RespostaItem {
 }
 
 export const formulariosService = {
-  listar: (params?: { page?: number; search?: string; ativo?: boolean }) =>
+  listar: (params?: { page?: number; limit?: number; search?: string; ativo?: boolean }) =>
     api.get<ListaFormularios>('/formularios', { params }).then((r) => r.data),
 
   iniciar: (idAtendimento: number, idFormulario: number) =>

@@ -10,6 +10,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ProfissionalNavProp, ProfissionalStackParamList } from '../../navigation/types';
 import { formulariosAdminService, FormularioAdmin, PerguntaAdmin } from '../../services/formularios';
+import { FormFooter } from '../../components/FormFooter';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useFeedback } from '../../context/FeedbackContext';
 import { formatData } from '../../utils/format';
@@ -185,15 +186,17 @@ export function DetalhesFormularioScreen() {
         {perguntas.length === 0 && (
           <Text className="text-center text-muted mt-4">Nenhuma pergunta cadastrada.</Text>
         )}
+      </ScrollView>
 
-        {/* Botão Voltar */}
+      {/* Botão Voltar fixo */}
+      <FormFooter>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
-          className="mt-4 h-12 border border-border rounded-2xl items-center justify-center"
+          className="h-12 border border-border rounded-2xl items-center justify-center"
         >
           <Text className="text-gray-600 font-medium">Voltar</Text>
         </TouchableOpacity>
-      </ScrollView>
+      </FormFooter>
     </View>
   );
 }

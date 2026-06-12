@@ -14,8 +14,10 @@ import { NavigationProp } from '../navigation/types';
 import { StepIndicator } from '../components/StepIndicator';
 import { InputField } from '../components/InputField';
 import { PrimaryButton } from '../components/PrimaryButton';
+import { FormFooter } from '../components/FormFooter';
+import { EnderecoFields, EnderecoValues } from '../components/EnderecoFields';
 import { authService } from '../services/auth';
-import { apoioService, buscarCep } from '../services/apoio';
+import { apoioService } from '../services/apoio';
 import { useFeedback } from '../context/FeedbackContext';
 import { useScrollToError } from '../hooks/useScrollToError';
 import { formatCPF, formatTelefone, cleanMask } from '../utils/masks';
@@ -48,13 +50,26 @@ export function CadastroPacienteScreen() {
   // Step 2 — Endereço
   const [cep, setCep] = useState('');
   const [logradouro, setLogradouro] = useState('');
+  const [numero, setNumero] = useState('');
+  const [complemento, setComplemento] = useState('');
   const [bairro, setBairro] = useState('');
   const [cidade, setCidade] = useState('');
   const [estado, setEstado] = useState('');
   const [pais, setPais] = useState('Brasil');
-  const [cepLoading, setCepLoading] = useState(false);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const endereco: EnderecoValues = { cep, logradouro, numero, complemento, bairro, cidade, estado, pais };
+  const setEndereco = (patch: Partial<EnderecoValues>) => {
+    if (patch.cep !== undefined) setCep(patch.cep);
+    if (patch.logradouro !== undefined) setLogradouro(patch.logradouro);
+    if (patch.numero !== undefined) setNumero(patch.numero);
+    if (patch.complemento !== undefined) setComplemento(patch.complemento);
+    if (patch.bairro !== undefined) setBairro(patch.bairro);
+    if (patch.cidade !== undefined) setCidade(patch.cidade);
+    if (patch.estado !== undefined) setEstado(patch.estado);
+    if (patch.pais !== undefined) setPais(patch.pais);
+  };
 
   // Step 3
   const [senha, setSenha] = useState('');
@@ -63,23 +78,6 @@ export function CadastroPacienteScreen() {
   useEffect(() => {
     apoioService.getGeneros().then(setGeneros).catch(() => null);
   }, []);
-
-  const handleCepChange = async (value: string) => {
-    const masked = value.replace(/\D/g, '').slice(0, 8);
-    const formatted = masked.length > 5 ? `${masked.slice(0, 5)}-${masked.slice(5)}` : masked;
-    setCep(formatted);
-    if (masked.length === 8) {
-      setCepLoading(true);
-      const data = await buscarCep(masked).catch(() => null);
-      if (data) {
-        setLogradouro(data.logradouro);
-        setBairro(data.bairro);
-        setCidade(data.localidade);
-        setEstado(data.uf);
-      }
-      setCepLoading(false);
-    }
-  };
 
   const validateStep1 = () => {
     const e: Record<string, string> = {};
@@ -93,6 +91,14 @@ export function CadastroPacienteScreen() {
       return false;
     }
     return true;
+  };
+
+  const validateStep2 = () => {
+    const e: Record<string, string> = {};
+    if (cep.replace(/\D/g, '').length !== 8) e.cep = 'Informe um CEP válido';
+    if (!numero.trim()) e.numero = 'Informe o número';
+    setErrors(e);
+    return Object.keys(e).length === 0;
   };
 
   const handleSubmit = async () => {
@@ -121,6 +127,8 @@ export function CadastroPacienteScreen() {
         id_genero: idGenero ?? undefined,
         cep: cleanMask(cep),
         logradouro,
+        numero,
+        complemento: complemento || undefined,
         bairro,
         cidade,
         estado,
@@ -165,6 +173,8 @@ export function CadastroPacienteScreen() {
                   value={nome}
                   onChangeText={setNome}
                   error={errors.nome}
+                  maxLength={70}
+                  counter
                 />
               </View>
               <View onLayout={registrar('cpf')}>
@@ -187,6 +197,8 @@ export function CadastroPacienteScreen() {
                   keyboardType="email-address"
                   autoCapitalize="none"
                   error={errors.email}
+                  maxLength={50}
+                  counter
                 />
               </View>
               <View onLayout={registrar('tel')}>
@@ -265,72 +277,16 @@ export function CadastroPacienteScreen() {
                 </View>
                 <Text className="text-sm text-gray-700">Nacionalidade estrangeira</Text>
               </TouchableOpacity>
-
-              <PrimaryButton label="Próximo" onPress={() => validateStep1() && setStep(2)} />
             </>
           )}
 
           {/* ── Step 2: Endereço ── */}
           {step === 2 && (
-            <>
-              <InputField
-                label="CEP"
-                placeholder="00000-000"
-                value={cep}
-                onChangeText={handleCepChange}
-                keyboardType="numeric"
-                maxLength={9}
-              />
-              {cepLoading && (
-                <Text className="text-muted text-xs -mt-3 mb-3">Buscando endereço...</Text>
-              )}
-              <InputField
-                label="Logradouro"
-                placeholder="Rua, Av., etc."
-                value={logradouro}
-                onChangeText={setLogradouro}
-              />
-              <InputField
-                label="Bairro"
-                placeholder="Bairro"
-                value={bairro}
-                onChangeText={setBairro}
-              />
-              <View className="flex-row gap-3">
-                <View className="flex-1">
-                  <InputField
-                    label="Cidade"
-                    placeholder="Cidade"
-                    value={cidade}
-                    onChangeText={setCidade}
-                  />
-                </View>
-                <View className="w-20">
-                  <InputField
-                    label="Estado"
-                    placeholder="UF"
-                    value={estado}
-                    onChangeText={(t) => setEstado(t.toUpperCase().slice(0, 2))}
-                    maxLength={2}
-                  />
-                </View>
-              </View>
-              <InputField
-                label="País"
-                placeholder="País"
-                value={pais}
-                onChangeText={setPais}
-              />
-
-              <View className="flex-row gap-3 mt-2">
-                <View className="flex-1">
-                  <PrimaryButton label="Voltar" onPress={() => setStep(1)} variant="outlined" />
-                </View>
-                <View className="flex-1">
-                  <PrimaryButton label="Próximo" onPress={() => setStep(3)} />
-                </View>
-              </View>
-            </>
+            <EnderecoFields
+              values={endereco}
+              onChange={setEndereco}
+              errors={{ cep: errors.cep, numero: errors.numero }}
+            />
           )}
 
           {/* ── Step 3: Acesso ── */}
@@ -362,19 +318,37 @@ export function CadastroPacienteScreen() {
                 secureToggle
                 error={errors.confirmarSenha}
               />
-
-              <View className="flex-row gap-3 mt-2">
-                <View className="flex-1">
-                  <PrimaryButton label="Voltar" onPress={() => setStep(2)} variant="outlined" />
-                </View>
-                <View className="flex-1">
-                  <PrimaryButton label="Cadastrar" onPress={handleSubmit} loading={loading} />
-                </View>
-              </View>
             </>
           )}
         </View>
       </ScrollView>
+
+      {/* Botões de navegação fixos */}
+      <FormFooter>
+        {step === 1 && (
+          <PrimaryButton label="Próximo" onPress={() => validateStep1() && setStep(2)} />
+        )}
+        {step === 2 && (
+          <View className="flex-row gap-3">
+            <View className="flex-1">
+              <PrimaryButton label="Voltar" onPress={() => setStep(1)} variant="outlined" />
+            </View>
+            <View className="flex-1">
+              <PrimaryButton label="Próximo" onPress={() => validateStep2() && setStep(3)} />
+            </View>
+          </View>
+        )}
+        {step === 3 && (
+          <View className="flex-row gap-3">
+            <View className="flex-1">
+              <PrimaryButton label="Voltar" onPress={() => setStep(2)} variant="outlined" />
+            </View>
+            <View className="flex-1">
+              <PrimaryButton label="Cadastrar" onPress={handleSubmit} loading={loading} />
+            </View>
+          </View>
+        )}
+      </FormFooter>
     </KeyboardAvoidingView>
   );
 }
