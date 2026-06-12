@@ -60,8 +60,13 @@ export function ResponderFormularioScreen() {
 
   const [detalhe, setDetalhe] = useState<DetalheFormulario | null>(null);
   const [respostas, setRespostas] = useState<RespostasMap>({});
+  // Respostas numéricas são mantidas como texto enquanto o usuário digita
+  // (convertidas para número só na hora de salvar) — evita "NaN" e permite
+  // digitar o número diretamente.
+  const [numeroTexto, setNumeroTexto] = useState<Record<number, string>>({});
   const [opcoesSelecionadas, setOpcoesSelecionadas] = useState<Record<number, number[]>>({});
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [sending, setSending] = useState(false);
 
   const load = useCallback(async () => {
@@ -70,21 +75,24 @@ export function ResponderFormularioScreen() {
       setDetalhe(d);
       setRespostas(initRespostas(d.formulario.pergunta, d.respostas));
 
-      // Inicializar opções selecionadas a partir de respostas existentes
       const opcs: Record<number, number[]> = {};
+      const nums: Record<number, string> = {};
       for (const r of d.respostas) {
-        // Para escolhas, o backend devolve valor_numero = id_opcao (uma linha por opção).
-        // valor_numero chega como string (Decimal) — converte para number para o
-        // comparativo com id_opcao funcionar na exibição.
+        const p = d.formulario.pergunta.find((p) => p.id_pergunta === r.id_pergunta);
+        if (!p) continue;
+        // valor_numero chega como string (Decimal). Para escolhas é o id_opcao;
+        // para NUMERO é o valor digitado.
         if (r.valor_numero !== undefined && r.valor_numero !== null) {
-          const p = d.formulario.pergunta.find((p) => p.id_pergunta === r.id_pergunta);
-          if (p && [ESCOLHA_UNICA, ESCOLHA_MULTIPLA].includes(p.id_tipo_pergunta)) {
+          if ([ESCOLHA_UNICA, ESCOLHA_MULTIPLA].includes(p.id_tipo_pergunta)) {
             if (!opcs[r.id_pergunta]) opcs[r.id_pergunta] = [];
             opcs[r.id_pergunta].push(Number(r.valor_numero));
+          } else if (p.id_tipo_pergunta === NUMERO) {
+            nums[r.id_pergunta] = String(Number(r.valor_numero));
           }
         }
       }
       setOpcoesSelecionadas(opcs);
+      setNumeroTexto(nums);
     } catch {
       toast('Não foi possível carregar o formulário.', 'error');
       navigation.goBack();
@@ -105,67 +113,67 @@ export function ResponderFormularioScreen() {
     }));
   };
 
-  // Persiste a resposta de UMA pergunta. Chamada ao sair do campo (onBlur)
-  // ou logo após selecionar uma opção/valor — cada chamada grava uma linha
-  // em log_respostas no backend.
-  const salvarCampo = async (item: RespostaItem) => {
-    if (concluido) return;
-    try {
-      await formulariosService.salvar(idAtendimento, idFormulario, [item]);
-    } catch {
-      // Silencioso: a validação efetiva ocorre no envio. Evita interromper
-      // o preenchimento caso um campo obrigatório fique vazio momentaneamente.
-    }
-  };
-
-  const salvarTexto = (p: Pergunta) => {
-    const valor = respostas[p.id_pergunta]?.valor_texto;
-    salvarCampo({ id_pergunta: p.id_pergunta, valor_texto: valor });
-  };
-
   const setBooleano = (p: Pergunta, value: boolean) => {
     setResposta(p.id_pergunta, { valor_binario: value });
-    salvarCampo({ id_pergunta: p.id_pergunta, valor_binario: value });
   };
 
-  // Incrementa/decrementa respeitando os limites da pergunta. Evita o campo
-  // livre de digitação (que gerava "NaN" ao digitar caractere inválido).
-  const stepNumero = (p: Pergunta, delta: number) => {
-    const min = p.valor_minimo ?? null;
-    const max = p.valor_maximo ?? null;
-    const atual = respostas[p.id_pergunta]?.valor_numero;
-    let novo: number;
-    if (atual === undefined || atual === null) {
-      novo = min ?? 0;
-    } else {
-      novo = Number(atual) + delta;
-    }
-    if (min !== null && novo < min) novo = min;
-    if (max !== null && novo > max) novo = max;
-    setResposta(p.id_pergunta, { valor_numero: novo });
-    salvarCampo({ id_pergunta: p.id_pergunta, valor_numero: novo });
+  // Aceita apenas dígitos e um separador decimal; não dispara salvamento.
+  const onChangeNumero = (idPergunta: number, t: string) => {
+    let cleaned = t.replace(/[^0-9.,]/g, '').replace(',', '.');
+    const partes = cleaned.split('.');
+    if (partes.length > 2) cleaned = `${partes[0]}.${partes.slice(1).join('')}`;
+    setNumeroTexto((prev) => ({ ...prev, [idPergunta]: cleaned }));
   };
 
   const toggleOpcao = (p: Pergunta, idOpcao: number, unica: boolean) => {
-    const atual = opcoesSelecionadas[p.id_pergunta] ?? [];
-    const next = unica
-      ? [idOpcao]
-      : atual.includes(idOpcao)
-        ? atual.filter((o) => o !== idOpcao)
-        : [...atual, idOpcao];
-    setOpcoesSelecionadas((prev) => ({ ...prev, [p.id_pergunta]: next }));
-    salvarCampo({ id_pergunta: p.id_pergunta, id_opcoes: next });
+    setOpcoesSelecionadas((prev) => {
+      const atual = prev[p.id_pergunta] ?? [];
+      const next = unica
+        ? [idOpcao]
+        : atual.includes(idOpcao)
+          ? atual.filter((o) => o !== idOpcao)
+          : [...atual, idOpcao];
+      return { ...prev, [p.id_pergunta]: next };
+    });
   };
 
+  // Monta o payload COMPLETO (todas as perguntas) a partir do estado atual.
   const buildPayload = (): RespostaItem[] => {
     if (!detalhe) return [];
     return detalhe.formulario.pergunta.map((p) => {
-      const r = respostas[p.id_pergunta] ?? { id_pergunta: p.id_pergunta };
       if ([ESCOLHA_UNICA, ESCOLHA_MULTIPLA].includes(p.id_tipo_pergunta)) {
         return { id_pergunta: p.id_pergunta, id_opcoes: opcoesSelecionadas[p.id_pergunta] ?? [] };
       }
-      return r;
+      if (p.id_tipo_pergunta === NUMERO) {
+        const raw = numeroTexto[p.id_pergunta];
+        const num = raw != null && raw !== '' && !isNaN(Number(raw)) ? Number(raw) : undefined;
+        return { id_pergunta: p.id_pergunta, valor_numero: num };
+      }
+      return respostas[p.id_pergunta] ?? { id_pergunta: p.id_pergunta };
     });
+  };
+
+  // Salva TODAS as respostas atuais como rascunho (um único update atômico).
+  const salvarRascunho = async () => {
+    if (concluido || !detalhe) return;
+    await formulariosService.salvar(idAtendimento, idFormulario, buildPayload());
+  };
+
+  // Voltar salvando o rascunho mais recente no banco.
+  const voltar = async () => {
+    if (saving || sending) return;
+    if (!concluido) {
+      setSaving(true);
+      try {
+        await salvarRascunho();
+      } catch (err: any) {
+        toast(err?.response?.data?.message ?? 'Não foi possível salvar o rascunho.', 'error');
+        setSaving(false);
+        return;
+      }
+      setSaving(false);
+    }
+    navigation.goBack();
   };
 
   const enviar = async () => {
@@ -178,6 +186,7 @@ export function ResponderFormularioScreen() {
 
     setSending(true);
     try {
+      // Salva as respostas finais e conclui (mesmo conjunto, sem concorrência).
       await formulariosService.salvar(idAtendimento, idFormulario, buildPayload());
       await formulariosService.concluir(idAtendimento, idFormulario);
       toast('Formulário enviado com sucesso!', 'success');
@@ -204,10 +213,13 @@ export function ResponderFormularioScreen() {
     if ([ESCOLHA_UNICA, ESCOLHA_MULTIPLA].includes(p.id_tipo_pergunta)) {
       return (opcoesSelecionadas[p.id_pergunta] ?? []).length > 0;
     }
+    if (p.id_tipo_pergunta === NUMERO) {
+      const raw = numeroTexto[p.id_pergunta];
+      return raw != null && raw !== '' && !isNaN(Number(raw));
+    }
     const r = respostas[p.id_pergunta];
     if (!r) return false;
     if (p.id_tipo_pergunta === TEXTO) return !!r.valor_texto && r.valor_texto.trim() !== '';
-    if (p.id_tipo_pergunta === NUMERO) return r.valor_numero !== undefined && r.valor_numero !== null;
     if (p.id_tipo_pergunta === BOOLEANO) return r.valor_binario !== undefined && r.valor_binario !== null;
     return false;
   };
@@ -225,7 +237,7 @@ export function ResponderFormularioScreen() {
             : { paddingTop: Math.max(insets.top, 48), paddingBottom: 16 }
         }
       >
-        <TouchableOpacity onPress={() => navigation.goBack()} className="mb-2 self-start flex-row items-center gap-1.5">
+        <TouchableOpacity onPress={voltar} className="mb-2 self-start flex-row items-center gap-1.5">
           <MaterialIcons name="arrow-back" size={20} color="white" />
           <Text className="text-white text-base">{nomeFormulario}</Text>
         </TouchableOpacity>
@@ -265,7 +277,6 @@ export function ResponderFormularioScreen() {
                   placeholderTextColor="#A0AEC0"
                   value={respostas[p.id_pergunta]?.valor_texto ?? ''}
                   onChangeText={(t) => setResposta(p.id_pergunta, { valor_texto: t })}
-                  onBlur={() => salvarTexto(p)}
                   multiline
                   editable={!concluido}
                   maxLength={300}
@@ -278,32 +289,18 @@ export function ResponderFormularioScreen() {
               </>
             )}
 
-            {/* NUMERO — stepper para evitar digitação inválida (NaN) */}
+            {/* NUMERO — campo digitável (aceita só dígitos e um decimal) */}
             {p.id_tipo_pergunta === NUMERO && (
-              <View className="flex-row items-center gap-3">
-                <TouchableOpacity
-                  disabled={concluido}
-                  onPress={() => stepNumero(p, -1)}
-                  className={`w-12 h-12 rounded-xl border items-center justify-center ${concluido ? 'bg-gray-100 border-border' : 'bg-white border-primary'}`}
-                >
-                  <MaterialIcons name="remove" size={22} color={concluido ? '#9CA3AF' : '#0D2347'} />
-                </TouchableOpacity>
-                <View className="flex-1 h-12 rounded-xl border border-border bg-input-bg items-center justify-center">
-                  <Text className="text-base font-semibold text-gray-800">
-                    {respostas[p.id_pergunta]?.valor_numero !== undefined &&
-                    respostas[p.id_pergunta]?.valor_numero !== null
-                      ? String(respostas[p.id_pergunta]?.valor_numero)
-                      : '—'}
-                  </Text>
-                </View>
-                <TouchableOpacity
-                  disabled={concluido}
-                  onPress={() => stepNumero(p, 1)}
-                  className={`w-12 h-12 rounded-xl border items-center justify-center ${concluido ? 'bg-gray-100 border-border' : 'bg-white border-primary'}`}
-                >
-                  <MaterialIcons name="add" size={22} color={concluido ? '#9CA3AF' : '#0D2347'} />
-                </TouchableOpacity>
-              </View>
+              <TextInput
+                className="bg-input-bg border border-border rounded-xl px-4 h-12 text-sm text-gray-800"
+                placeholder="Digite um número"
+                placeholderTextColor="#A0AEC0"
+                keyboardType="numeric"
+                value={numeroTexto[p.id_pergunta] ?? ''}
+                onChangeText={(t) => onChangeNumero(p.id_pergunta, t)}
+                editable={!concluido}
+                maxLength={12}
+              />
             )}
             {p.id_tipo_pergunta === NUMERO && (p.valor_minimo != null || p.valor_maximo != null) && (
               <Text className="text-xs text-muted mt-1">
@@ -372,7 +369,7 @@ export function ResponderFormularioScreen() {
         <FormFooter>
           <View className="flex-row gap-3">
             <View className="flex-1">
-              <PrimaryButton label="Cancelar" onPress={() => navigation.goBack()} variant="outlined" />
+              <PrimaryButton label="Voltar" onPress={voltar} loading={saving} variant="outlined" />
             </View>
             <View className="flex-1">
               <PrimaryButton label="Enviar" onPress={enviar} loading={sending} />

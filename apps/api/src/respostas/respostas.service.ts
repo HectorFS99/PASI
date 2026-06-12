@@ -231,17 +231,16 @@ export class RespostasService {
       id_usuario_pac: user.id_usuario,
     };
 
+    // Observação: este método é usado APENAS no salvar (rascunho). Campos
+    // vazios são apenas ignorados (return []); a exigência de perguntas
+    // obrigatórias é validada somente no concluir.
     switch (pergunta.id_tipo_pergunta) {
       case TipoPergunta.TEXTO: {
-        if (!item.valor_texto?.trim()) {
-          this.exigirSeObrigatoria(pergunta);
-          return [];
-        }
+        if (!item.valor_texto?.trim()) return [];
         return [{ ...base, valor_texto: item.valor_texto }];
       }
       case TipoPergunta.NUMERO: {
         if (item.valor_numero === undefined || item.valor_numero === null) {
-          this.exigirSeObrigatoria(pergunta);
           return [];
         }
         this.validarFaixaNumerica(pergunta, item.valor_numero);
@@ -249,17 +248,13 @@ export class RespostasService {
       }
       case TipoPergunta.BOOLEANO: {
         if (item.valor_binario === undefined || item.valor_binario === null) {
-          this.exigirSeObrigatoria(pergunta);
           return [];
         }
         return [{ ...base, valor_binario: item.valor_binario }];
       }
       case TipoPergunta.ESCOLHA_UNICA: {
         const ids = item.id_opcoes ?? [];
-        if (ids.length === 0) {
-          this.exigirSeObrigatoria(pergunta);
-          return [];
-        }
+        if (ids.length === 0) return [];
         if (ids.length !== 1) {
           throw new BadRequestException(
             `A pergunta "${pergunta.pergunta}" aceita apenas uma opção.`,
@@ -269,10 +264,7 @@ export class RespostasService {
       }
       case TipoPergunta.ESCOLHA_MULTIPLA: {
         const ids = item.id_opcoes ?? [];
-        if (ids.length === 0) {
-          this.exigirSeObrigatoria(pergunta);
-          return [];
-        }
+        if (ids.length === 0) return [];
         return ids.map((idOpcao) => this.linhaOpcao(base, pergunta, idOpcao));
       }
       default:
@@ -300,14 +292,6 @@ export class RespostasService {
       valor_numero: opcao.id_opcao,
       valor_texto: opcao.texto_opcao,
     };
-  }
-
-  private exigirSeObrigatoria(pergunta: { obrigatoria: boolean | null; pergunta: string }) {
-    if (pergunta.obrigatoria) {
-      throw new BadRequestException(
-        `A pergunta obrigatória "${pergunta.pergunta}" precisa ser respondida.`,
-      );
-    }
   }
 
   private validarFaixaNumerica(
