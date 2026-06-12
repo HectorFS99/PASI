@@ -37,7 +37,7 @@ const MAX_OBS = 500;
 export function AvaliarFormularioScreen() {
   const navigation = useNavigation<ProfissionalNavProp>();
   const insets = useSafeAreaInsets();
-  const { toast } = useFeedback();
+  const { toast, confirm } = useFeedback();
   const { idAtendimento, idFormulario, nomeFormulario, modo } = useRoute<RouteT>().params;
   const ehAvaliar = modo === 'avaliar';
 
@@ -68,6 +68,13 @@ export function AvaliarFormularioScreen() {
       setErroObs('A observação da avaliação é obrigatória.');
       return;
     }
+    const ok = await confirm({
+      title: 'Finalizar avaliação',
+      message:
+        'Após finalizar, a avaliação será registrada e não será possível avaliar este formulário novamente. Deseja continuar?',
+      confirmLabel: 'Finalizar avaliação',
+    });
+    if (!ok) return;
     setSaving(true);
     try {
       await avaliacoesService.avaliar(idAtendimento, idFormulario, observacao.trim());

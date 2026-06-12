@@ -22,6 +22,8 @@ export const SituacaoAtendimento = {
 export const SituacaoFormulario = {
   RASCUNHO: 1,
   RESPONDIDO: 2,
+  EM_AVALIACAO: 3,
+  AVALIADO: 4,
 } as const;
 
 /** tipo_pergunta (ordem da carga inicial do DDL). */

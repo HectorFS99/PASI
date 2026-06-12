@@ -73,7 +73,7 @@ export function FormulariosAtendimentoScreen() {
   const formularios = atendimento.atendimento_formulario;
   const total = formularios.length;
   const respondidos = formularios.filter(
-    (af) => af.status_formulario_paciente?.id_situacao_formulario === 2,
+    (af) => (af.status_formulario_paciente?.id_situacao_formulario ?? 0) >= 2,
   ).length;
   const pendentes = total - respondidos;
   const progresso = total > 0 ? respondidos / total : 0;
@@ -116,7 +116,8 @@ export function FormulariosAtendimentoScreen() {
         {/* Cards de formulários */}
         {formularios.map((af) => {
           const situacaoId = af.status_formulario_paciente?.id_situacao_formulario ?? 1;
-          const respondido = situacaoId === 2;
+          // Respondido ou além (em avaliação / avaliado) = não pode mais responder.
+          const respondido = situacaoId >= 2;
           const iconName = iconeFormulario(af.formulario.nome);
 
           return (

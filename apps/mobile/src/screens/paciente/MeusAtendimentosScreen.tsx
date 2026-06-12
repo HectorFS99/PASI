@@ -20,7 +20,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useDrawer } from '../../context/DrawerContext';
 import { useFeedback } from '../../context/FeedbackContext';
 import { formatProtocolo, formatData } from '../../utils/format';
-import { brParaIso } from '../../utils/date';
+import { brParaIsoInicioDia, brParaIsoFimDia } from '../../utils/date';
 
 type OrdenarPor = 'data_desc' | 'data_asc';
 
@@ -74,7 +74,7 @@ export function MeusAtendimentosScreen() {
 
   const temPendentes = atendimentos.some((a) =>
     a.atendimento_formulario.some(
-      (af) => !af.status_formulario_paciente || af.status_formulario_paciente.id_situacao_formulario !== 2,
+      (af) => !af.status_formulario_paciente || af.status_formulario_paciente.id_situacao_formulario < 2,
     ),
   );
 
@@ -83,9 +83,9 @@ export function MeusAtendimentosScreen() {
       page: p,
       search: q || undefined,
       situacoes: f.situacoes.length > 0 ? f.situacoes.join(',') : undefined,
-      // Backend espera ISO (aaaa-mm-dd); datas incompletas são ignoradas.
-      data_inicio: brParaIso(f.dataInicio),
-      data_fim: brParaIso(f.dataFim),
+      // Envia início/fim do dia no fuso local (datas incompletas viram undefined).
+      data_inicio: brParaIsoInicioDia(f.dataInicio),
+      data_fim: brParaIsoFimDia(f.dataFim),
       ordenar_por: f.ordenarPor,
     }),
     [],
@@ -150,7 +150,7 @@ export function MeusAtendimentosScreen() {
 
   const pendentesCount = (a: Atendimento) =>
     a.atendimento_formulario.filter(
-      (af) => !af.status_formulario_paciente || af.status_formulario_paciente.id_situacao_formulario !== 2,
+      (af) => !af.status_formulario_paciente || af.status_formulario_paciente.id_situacao_formulario < 2,
     ).length;
 
   const renderCard = ({ item }: { item: Atendimento }) => {

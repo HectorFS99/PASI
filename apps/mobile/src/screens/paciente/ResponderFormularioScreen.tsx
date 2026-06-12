@@ -95,7 +95,8 @@ export function ResponderFormularioScreen() {
 
   useEffect(() => { load(); }, [load]);
 
-  const concluido = detalhe?.formulario_paciente?.id_situacao_formulario === 2;
+  // Respondido ou além (em avaliação / avaliado): somente leitura para o paciente.
+  const concluido = (detalhe?.formulario_paciente?.id_situacao_formulario ?? 0) >= 2;
 
   const setResposta = (idPergunta: number, campo: Partial<RespostaItem>) => {
     setRespostas((prev) => ({

@@ -121,7 +121,8 @@ export class RespostasService {
     await this.carregarAtendimentoDoPaciente(idAtendimento, idFormulario, user);
 
     const fp = await this.exigirFormularioPaciente(idFormulario, user.id_usuario);
-    if (fp.id_situacao_formulario === SituacaoFormulario.RESPONDIDO) {
+    // Após enviar (Respondido) ou já em avaliação/avaliado, não pode mais alterar.
+    if (fp.id_situacao_formulario >= SituacaoFormulario.RESPONDIDO) {
       throw new BadRequestException(
         'Este formulário já foi concluído e não pode mais ser alterado.',
       );
@@ -192,7 +193,7 @@ export class RespostasService {
     await this.carregarAtendimentoDoPaciente(idAtendimento, idFormulario, user);
 
     const fp = await this.exigirFormularioPaciente(idFormulario, user.id_usuario);
-    if (fp.id_situacao_formulario === SituacaoFormulario.RESPONDIDO) {
+    if (fp.id_situacao_formulario >= SituacaoFormulario.RESPONDIDO) {
       throw new BadRequestException('Este formulário já foi concluído.');
     }
 

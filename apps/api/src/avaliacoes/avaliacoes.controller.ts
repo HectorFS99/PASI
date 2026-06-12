@@ -20,6 +20,18 @@ import { CurrentUser, type AuthUser } from '../auth/current-user.decorator';
 export class AvaliacoesController {
   constructor(private readonly avaliacoesService: AvaliacoesService) {}
 
+  @Post('iniciar')
+  @ApiOperation({
+    summary: 'Inicia a análise do formulário (marca "Em avaliação") — profissional',
+  })
+  iniciar(
+    @Param('idAtendimento', ParseIntPipe) idAtendimento: number,
+    @Param('idFormulario', ParseIntPipe) idFormulario: number,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.avaliacoesService.iniciar(idAtendimento, idFormulario, user);
+  }
+
   @Post()
   @ApiOperation({
     summary: 'Avalia um formulário respondido, com observação obrigatória (profissional)',

@@ -20,6 +20,8 @@ const ATENDIMENTO: Record<string, StyleDef> = {
 const FORMULARIO: Record<string, StyleDef> = {
   '1': { bg: '#FFFBEB', text: '#D97706', label: 'Pendente' },
   '2': { bg: '#F0FDF4', text: '#16A34A', label: 'Respondido' },
+  '3': { bg: '#FAF5FF', text: '#7C3AED', label: 'Em avaliação' },
+  '4': { bg: '#EFF6FF', text: '#1D4ED8', label: 'Avaliado' },
 };
 
 // Explica em que momento cada status é atingido (exibido no tooltip).
@@ -36,6 +38,8 @@ const TOOLTIP_ATENDIMENTO: Record<string, string> = {
 const TOOLTIP_FORMULARIO: Record<string, string> = {
   '1': 'O formulário ainda não foi respondido por completo pelo paciente.',
   '2': 'O formulário foi respondido e enviado pelo paciente.',
+  '3': 'O profissional iniciou a análise das respostas deste formulário.',
+  '4': 'O profissional finalizou a avaliação e registrou a observação. Não permite nova avaliação.',
 };
 
 interface Props {

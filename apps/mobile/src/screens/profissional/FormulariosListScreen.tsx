@@ -21,7 +21,7 @@ import {
 import { apoioService } from '../../services/apoio';
 import { useFeedback } from '../../context/FeedbackContext';
 import { formatData } from '../../utils/format';
-import { brParaIso } from '../../utils/date';
+import { brParaIsoInicioDia, brParaIsoFimDia } from '../../utils/date';
 import { DateField } from '../../components/DateField';
 
 type OrdenarPor = 'data_desc' | 'data_asc' | 'nome' | 'mais_respondidos';
@@ -86,9 +86,9 @@ export function FormulariosListScreen() {
       search: q || undefined,
       id_tipo_formulario: f.tiposAtivos.length === 1 ? f.tiposAtivos[0] : undefined,
       ativo: f.apenasAtivos ? true : undefined,
-      // Backend espera ISO (aaaa-mm-dd); datas incompletas são ignoradas.
-      data_inicio: brParaIso(f.dataInicio),
-      data_fim: brParaIso(f.dataFim),
+      // Envia início/fim do dia no fuso local (datas incompletas viram undefined).
+      data_inicio: brParaIsoInicioDia(f.dataInicio),
+      data_fim: brParaIsoFimDia(f.dataFim),
       ordenar_por: f.ordenarPor,
     }),
     [],

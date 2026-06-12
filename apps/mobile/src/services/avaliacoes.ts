@@ -8,6 +8,12 @@ export interface Avaliacao {
 }
 
 export const avaliacoesService = {
+  // Inicia a análise do formulário (marca "Em avaliação").
+  iniciar: (idAtendimento: number, idFormulario: number) =>
+    api
+      .post(`/atendimentos/${idAtendimento}/formularios/${idFormulario}/avaliacoes/iniciar`)
+      .then((r) => r.data),
+
   // Registra a avaliação de um formulário respondido (observação obrigatória).
   avaliar: (idAtendimento: number, idFormulario: number, observacao: string) =>
     api

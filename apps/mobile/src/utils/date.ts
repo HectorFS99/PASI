@@ -32,3 +32,20 @@ export function brParaDate(br: string): Date | null {
   const date = new Date(y, m - 1, d);
   return isNaN(date.getTime()) ? null : date;
 }
+
+// Instante (ISO UTC) do INÍCIO do dia no fuso local. Para filtros de data:
+// "12/06/2026" -> 2026-06-12T00:00:00 local convertido para UTC.
+export function brParaIsoInicioDia(br: string): string | undefined {
+  const d = brParaDate(br);
+  if (!d) return undefined;
+  d.setHours(0, 0, 0, 0);
+  return d.toISOString();
+}
+
+// Instante (ISO UTC) do FIM do dia no fuso local (23:59:59.999).
+export function brParaIsoFimDia(br: string): string | undefined {
+  const d = brParaDate(br);
+  if (!d) return undefined;
+  d.setHours(23, 59, 59, 999);
+  return d.toISOString();
+}

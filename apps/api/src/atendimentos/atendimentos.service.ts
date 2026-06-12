@@ -93,9 +93,11 @@ export class AtendimentosService {
     }
 
     if (query.data_inicio || query.data_fim) {
+      // O cliente envia os instantes de início/fim do dia no fuso local,
+      // então usamos os valores como recebidos (sem reconstruir o fim do dia).
       where.dt_cadastro = {
         ...(query.data_inicio ? { gte: new Date(query.data_inicio) } : {}),
-        ...(query.data_fim ? { lte: new Date(`${query.data_fim}T23:59:59.999Z`) } : {}),
+        ...(query.data_fim ? { lte: new Date(query.data_fim) } : {}),
       };
     }
 

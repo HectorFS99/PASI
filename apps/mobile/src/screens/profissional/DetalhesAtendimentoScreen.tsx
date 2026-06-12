@@ -12,7 +12,8 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { ProfissionalNavProp, ProfissionalStackParamList } from '../../navigation/types';
 import { StatusBadge } from '../../components/StatusBadge';
 import { FormFooter } from '../../components/FormFooter';
-import { atendimentosService, Atendimento } from '../../services/atendimentos';
+import { atendimentosService, Atendimento, AtendimentoFormulario } from '../../services/atendimentos';
+import { avaliacoesService } from '../../services/avaliacoes';
 import { useFeedback } from '../../context/FeedbackContext';
 import { formatProtocolo, formatData, maskCpf } from '../../utils/format';
 
@@ -39,6 +40,27 @@ export function DetalhesAtendimentoScreen() {
   }, [id]);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
+
+  // Inicia a análise (marca "Em avaliação") e abre a tela de avaliação.
+  const iniciarAvaliacao = async (af: AtendimentoFormulario) => {
+    const ok = await confirm({
+      title: 'Iniciar avaliação',
+      message: `Deseja iniciar a avaliação do formulário "${af.formulario.nome}"?`,
+      confirmLabel: 'Iniciar avaliação',
+    });
+    if (!ok) return;
+    try {
+      await avaliacoesService.iniciar(id, af.id_formulario);
+      navigation.navigate('AvaliarFormulario', {
+        idAtendimento: id,
+        idFormulario: af.id_formulario,
+        nomeFormulario: af.formulario.nome,
+        modo: 'avaliar',
+      });
+    } catch (err: any) {
+      toast(err?.response?.data?.message ?? 'Não foi possível iniciar a avaliação.', 'error');
+    }
+  };
 
   if (loading || !atendimento) {
     return (
@@ -122,30 +144,30 @@ export function DetalhesAtendimentoScreen() {
               </View>
 
               <View className="flex-row gap-2">
-                {situacaoId === 2 && (
+                {/* Avaliar: só enquanto Respondido (2) ou Em avaliação (3). Depois de Avaliado (4), some. */}
+                {(situacaoId === 2 || situacaoId === 3) && (
                   <TouchableOpacity
-                    onPress={async () => {
-                      const ok = await confirm({
-                        title: 'Iniciar avaliação',
-                        message: `Deseja iniciar a avaliação do formulário "${af.formulario.nome}"?`,
-                        confirmLabel: 'Iniciar avaliação',
-                      });
-                      if (ok) {
-                        navigation.navigate('AvaliarFormulario', {
-                          idAtendimento: id,
-                          idFormulario: af.id_formulario,
-                          nomeFormulario: af.formulario.nome,
-                          modo: 'avaliar',
-                        });
-                      }
-                    }}
+                    onPress={() => iniciarAvaliacao(af)}
                     className="flex-1 bg-primary/10 rounded-xl py-2 items-center"
                   >
                     <Text className="text-primary text-xs font-medium">Avaliar respostas</Text>
                   </TouchableOpacity>
                 )}
                 <TouchableOpacity
-                  onPress={() => navigation.navigate('DetalhesFormulario', { id: af.id_formulario })}
+                  onPress={() => {
+                    // Respondido (ou além) → mostra o formulário respondido;
+                    // caso contrário, exibe o template com inputs desabilitados.
+                    if (situacaoId >= 2) {
+                      navigation.navigate('AvaliarFormulario', {
+                        idAtendimento: id,
+                        idFormulario: af.id_formulario,
+                        nomeFormulario: af.formulario.nome,
+                        modo: 'visualizar',
+                      });
+                    } else {
+                      navigation.navigate('DetalhesFormulario', { id: af.id_formulario });
+                    }
+                  }}
                   className="flex-1 border border-border rounded-xl py-2 items-center"
                 >
                   <Text className="text-gray-600 text-xs">Visualizar</Text>
