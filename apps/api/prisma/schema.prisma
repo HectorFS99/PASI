@@ -1,0 +1,300 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model acao {
+  id_acao       Int             @id(map: "pk_acao") @default(autoincrement())
+  nome          String          @db.VarChar(30)
+  descricao     String?         @db.VarChar(300)
+  log_adm_geral log_adm_geral[]
+}
+
+model atendimento {
+  id_atendimento                                   Int                      @id @default(autoincrement())
+  descricao                                        String?                  @db.VarChar(150)
+  id_usuario_paciente                              Int
+  id_situacao_atendimento                          Int                      @db.SmallInt
+  dt_cadastro                                      DateTime?                @default(now()) @db.Timestamp(6)
+  id_usuario_cad                                   Int?
+  usuario_atendimento_id_usuario_pacienteTousuario usuario                  @relation("atendimento_id_usuario_pacienteTousuario", fields: [id_usuario_paciente], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_atend_paciente")
+  situacao_atendimento                             situacao_atendimento     @relation(fields: [id_situacao_atendimento], references: [id_situacao_atendimento], onDelete: NoAction, onUpdate: NoAction, map: "fk_atend_situacao")
+  usuario_atendimento_id_usuario_cadTousuario      usuario?                 @relation("atendimento_id_usuario_cadTousuario", fields: [id_usuario_cad], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_atend_usuariocad")
+  atendimento_formulario                           atendimento_formulario[]
+}
+
+model atendimento_formulario {
+  id_atendimento_formulario Int         @id @default(autoincrement())
+  id_atendimento            Int
+  id_formulario             Int
+  dt_atribuicao             DateTime?   @default(now()) @db.Timestamp(6)
+  id_usuario_atribuicao     Int?
+  atendimento               atendimento @relation(fields: [id_atendimento], references: [id_atendimento], onDelete: NoAction, onUpdate: NoAction, map: "fk_af_atendimento")
+  formulario                formulario  @relation(fields: [id_formulario], references: [id_formulario], onDelete: NoAction, onUpdate: NoAction, map: "fk_af_formulario")
+  usuario                   usuario?    @relation(fields: [id_usuario_atribuicao], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_af_usuario")
+}
+
+model documentos {
+  id_documento   Int         @id @default(autoincrement())
+  id_formulario  Int?
+  id_resposta    Int?
+  nome_fisico    String?     @db.VarChar(255)
+  caminho        String      @db.VarChar(500)
+  id_usuario_cad Int
+  dt_cadastro    DateTime?   @default(now()) @db.Timestamp(6)
+  excluido       Boolean?    @default(false)
+  formulario     formulario? @relation(fields: [id_formulario], references: [id_formulario], onDelete: NoAction, onUpdate: NoAction, map: "fk_doc_formulario")
+  resposta       resposta?   @relation(fields: [id_resposta], references: [id_resposta], onDelete: NoAction, onUpdate: NoAction, map: "fk_doc_resposta")
+  usuario        usuario     @relation(fields: [id_usuario_cad], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_doc_usuario")
+}
+
+model formulario {
+  id_formulario          Int                      @id @default(autoincrement())
+  id_tipo_formulario     Int
+  nome                   String?                  @db.VarChar(50)
+  descricao              String?                  @db.VarChar(500)
+  ativo                  Boolean?                 @default(true)
+  dt_cadastro            DateTime?                @default(now()) @db.Timestamp(6)
+  atendimento_formulario atendimento_formulario[]
+  documentos             documentos[]
+  tipo_formulario        tipo_formulario          @relation(fields: [id_tipo_formulario], references: [id_tipo_formulario], onDelete: NoAction, onUpdate: NoAction, map: "fk_form_tipoform")
+  formulario_avaliacao   formulario_avaliacao[]
+  formulario_paciente    formulario_paciente[]
+  pergunta               pergunta[]
+}
+
+model formulario_avaliacao {
+  id_formulario_avaliacao Int        @id @default(autoincrement())
+  id_formulario           Int
+  id_usuario_avaliador    Int
+  dt_avaliacao            DateTime   @default(now()) @db.Timestamp(6)
+  observacao              String     @db.VarChar(500)
+  usuario                 usuario    @relation(fields: [id_usuario_avaliador], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_fav_avaliador")
+  formulario              formulario @relation(fields: [id_formulario], references: [id_formulario], onDelete: NoAction, onUpdate: NoAction, map: "fk_fav_formulario")
+}
+
+model formulario_paciente {
+  id_formulario_paciente Int                 @id @default(autoincrement())
+  id_formulario          Int
+  id_usuario_paciente    Int
+  id_situacao_formulario Int                 @db.SmallInt
+  formulario             formulario          @relation(fields: [id_formulario], references: [id_formulario], onDelete: NoAction, onUpdate: NoAction, map: "fk_fp_formulario")
+  usuario                usuario             @relation(fields: [id_usuario_paciente], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_fp_paciente")
+  situacao_formulario    situacao_formulario @relation(fields: [id_situacao_formulario], references: [id_situacao_formulario], onDelete: NoAction, onUpdate: NoAction, map: "fk_fp_situacao")
+  resposta               resposta[]
+  log_respostas          log_respostas[]
+}
+
+model genero {
+  id_genero Int       @id @default(autoincrement()) @db.SmallInt
+  nome      String    @db.VarChar(30)
+  descricao String?   @db.VarChar(300)
+  usuario   usuario[]
+}
+
+model log_adm_geral {
+  id_log_adm_geral Int       @id @default(autoincrement())
+  id_modulo        Int
+  id_acao          Int
+  detalhe          String?   @db.VarChar(500)
+  id_usuario_acao  Int
+  dt_hora_acao     DateTime? @default(now()) @db.Timestamp(6)
+  acao             acao      @relation(fields: [id_acao], references: [id_acao], onDelete: NoAction, onUpdate: NoAction, map: "fk_lag_acao")
+  modulo           modulo    @relation(fields: [id_modulo], references: [id_modulo], onDelete: NoAction, onUpdate: NoAction, map: "fk_lag_modulo")
+  usuario          usuario   @relation(fields: [id_usuario_acao], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_lag_usuario")
+}
+
+model log_respostas {
+  id_log_resposta        Int                  @id @default(autoincrement())
+  id_resposta            Int?
+  valor_texto            String?              @db.VarChar(300)
+  valor_numero           Decimal?             @db.Decimal
+  valor_binario          Boolean?
+  valor_data             DateTime?            @db.Date
+  dt_registro            DateTime             @default(now()) @db.Timestamp(6)
+  id_usuario             Int
+  id_formulario_paciente Int?
+  id_pergunta            Int?
+  resposta               resposta?            @relation(fields: [id_resposta], references: [id_resposta], onDelete: SetNull, onUpdate: NoAction, map: "fk_lr_resposta")
+  usuario                usuario              @relation(fields: [id_usuario], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_lr_usuario")
+  formulario_paciente    formulario_paciente? @relation(fields: [id_formulario_paciente], references: [id_formulario_paciente], onDelete: NoAction, onUpdate: NoAction, map: "fk_lr_formpac")
+  pergunta               pergunta?            @relation(fields: [id_pergunta], references: [id_pergunta], onDelete: NoAction, onUpdate: NoAction, map: "fk_lr_pergunta")
+}
+
+model modulo {
+  id_modulo     Int             @id @default(autoincrement())
+  nome          String          @db.VarChar(50)
+  descricao     String?         @db.VarChar(300)
+  log_adm_geral log_adm_geral[]
+}
+
+model opcao_pergunta {
+  id_opcao    Int      @id @default(autoincrement())
+  id_pergunta Int
+  texto_opcao String   @db.VarChar(255)
+  valor_opcao Int?
+  pergunta    pergunta @relation(fields: [id_pergunta], references: [id_pergunta], onDelete: NoAction, onUpdate: NoAction, map: "fk_op_pergunta")
+}
+
+model pergunta {
+  id_pergunta      Int              @id @default(autoincrement())
+  id_tipo_pergunta Int              @db.SmallInt
+  pergunta         String           @db.VarChar(500)
+  valor_minimo     Int?
+  valor_maximo     Int?
+  obrigatoria      Boolean?         @default(true)
+  dt_cadastro      DateTime?        @default(now()) @db.Timestamp(6)
+  id_usuario_cad   Int?
+  id_formulario    Int?
+  opcao_pergunta   opcao_pergunta[]
+  formulario       formulario?      @relation(fields: [id_formulario], references: [id_formulario], onDelete: NoAction, onUpdate: NoAction, map: "fk_perg_formulario")
+  tipo_pergunta    tipo_pergunta    @relation(fields: [id_tipo_pergunta], references: [id_tipo_pergunta], onDelete: NoAction, onUpdate: NoAction, map: "fk_perg_tipoperg")
+  usuario          usuario?         @relation(fields: [id_usuario_cad], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_perg_usuario")
+  resposta         resposta[]
+  log_respostas    log_respostas[]
+}
+
+model profissao {
+  id_profissao      Int            @id @default(autoincrement())
+  id_tipo_profissao Int
+  nome              String?        @db.VarChar(100)
+  tipo_profissao    tipo_profissao @relation(fields: [id_tipo_profissao], references: [id_tipo_profissao], onDelete: NoAction, onUpdate: NoAction, map: "fk_prof_tipoprof")
+  usuario           usuario[]
+}
+
+model resposta {
+  id_resposta            Int                  @id @default(autoincrement())
+  id_formulario_paciente Int?
+  valor_texto            String?              @db.VarChar(300)
+  valor_numero           Decimal?             @db.Decimal
+  valor_binario          Boolean?
+  valor_data             DateTime?            @db.Date
+  dt_resposta            DateTime             @default(now()) @db.Timestamp(6)
+  id_usuario_pac         Int
+  id_pergunta            Int
+  documentos             documentos[]
+  log_respostas          log_respostas[]
+  formulario_paciente    formulario_paciente? @relation(fields: [id_formulario_paciente], references: [id_formulario_paciente], onDelete: NoAction, onUpdate: NoAction, map: "fk_resp_formpac")
+  pergunta               pergunta             @relation(fields: [id_pergunta], references: [id_pergunta], onDelete: NoAction, onUpdate: NoAction, map: "fk_resp_pergunta")
+  usuario                usuario              @relation(fields: [id_usuario_pac], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_resp_usuario")
+}
+
+model situacao_atendimento {
+  id_situacao_atendimento Int           @id @default(autoincrement()) @db.SmallInt
+  nome                    String        @db.VarChar(30)
+  descricao               String?       @db.VarChar(300)
+  atendimento             atendimento[]
+}
+
+model situacao_formulario {
+  id_situacao_formulario Int                   @id @default(autoincrement()) @db.SmallInt
+  nome                   String                @db.VarChar(30)
+  descricao              String?               @db.VarChar(300)
+  formulario_paciente    formulario_paciente[]
+}
+
+model tipo_formulario {
+  id_tipo_formulario          Int             @id @default(autoincrement())
+  nome                        String?         @db.VarChar(50)
+  descricao                   String?         @db.VarChar(150)
+  id_tipo_profissao_avaliacao Int?
+  formulario                  formulario[]
+  tipo_profissao              tipo_profissao? @relation(fields: [id_tipo_profissao_avaliacao], references: [id_tipo_profissao], onDelete: NoAction, onUpdate: NoAction, map: "fk_tipof_tipoprof")
+}
+
+model tipo_pergunta {
+  id_tipo_pergunta Int        @id @default(autoincrement()) @db.SmallInt
+  nome             String?    @db.VarChar(30)
+  descricao        String?    @db.VarChar(100)
+  ativo            Boolean?   @default(true)
+  pergunta         pergunta[]
+}
+
+model tipo_profissao {
+  id_tipo_profissao Int               @id @default(autoincrement())
+  nome              String?           @db.VarChar(50)
+  descricao         String?           @db.VarChar(300)
+  profissao         profissao[]
+  tipo_formulario   tipo_formulario[]
+}
+
+model tipo_unidade_atendimento {
+  id_tipo_unidade_atend Int                   @id @default(autoincrement())
+  nome                  String?               @db.VarChar(50)
+  descricao             String?               @db.VarChar(300)
+  unidade_atendimento   unidade_atendimento[]
+}
+
+model tipo_usuario {
+  id_tipo_usuario Int       @id @default(autoincrement()) @db.SmallInt
+  nome            String    @db.VarChar(30)
+  descricao       String?   @db.VarChar(300)
+  usuario         usuario[]
+}
+
+model unidade_atendimento {
+  id_unidade_atendimento                                      Int                      @id @default(autoincrement())
+  id_tipo_unidade_atend                                       Int
+  nome                                                        String                   @db.VarChar(50)
+  telefone                                                    String?                  @db.VarChar(15)
+  email                                                       String?                  @db.VarChar(50)
+  cep                                                         String?                  @db.VarChar(8)
+  logradouro                                                  String                   @db.VarChar(100)
+  numero                                                      String                   @db.VarChar(10)
+  complemento                                                 String?                  @db.VarChar(15)
+  bairro                                                      String                   @db.VarChar(50)
+  cidade                                                      String                   @db.VarChar(50)
+  estado                                                      String                   @db.Char(2)
+  id_usuario_cad                                              Int?
+  dt_cadastro                                                 DateTime?                @default(now()) @db.Timestamp(6)
+  tipo_unidade_atendimento                                    tipo_unidade_atendimento @relation(fields: [id_tipo_unidade_atend], references: [id_tipo_unidade_atend], onDelete: NoAction, onUpdate: NoAction, map: "fk_ua_tipounidade")
+  usuario_unidade_atendimento_id_usuario_cadTousuario         usuario?                 @relation("unidade_atendimento_id_usuario_cadTousuario", fields: [id_usuario_cad], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_ua_usuariocad")
+  usuario_usuario_id_unidade_atendimentoTounidade_atendimento usuario[]                @relation("usuario_id_unidade_atendimentoTounidade_atendimento")
+}
+
+model usuario {
+  id_usuario                                                              Int                      @id @default(autoincrement())
+  id_tipo_usuario                                                         Int                      @db.SmallInt
+  id_genero                                                               Int?                     @db.SmallInt
+  nome                                                                    String                   @db.VarChar(70)
+  sexo                                                                    String                   @db.Char(1)
+  dt_nascimento                                                           DateTime?                @db.Timestamp(6)
+  cpf                                                                     String                   @unique(map: "uq_usuario_cpf") @db.VarChar(11)
+  email                                                                   String                   @unique(map: "uq_usuario_email") @db.VarChar(50)
+  tel_celular                                                             String                   @unique(map: "uq_usuario_tel_celular") @db.VarChar(15)
+  nac_estrangeira                                                         Boolean?                 @default(false)
+  cep                                                                     String?                  @db.VarChar(8)
+  logradouro                                                              String?                  @db.VarChar(100)
+  numero                                                                  String?                  @db.VarChar(10)
+  complemento                                                             String?                  @db.VarChar(15)
+  bairro                                                                  String?                  @db.VarChar(50)
+  cidade                                                                  String?                  @db.VarChar(50)
+  estado                                                                  String?                  @db.Char(2)
+  pais                                                                    String?                  @db.VarChar(50)
+  senha_hash                                                              String?                  @db.VarChar(255)
+  senha_reset_token                                                       String?                  @unique @db.VarChar(64)
+  senha_reset_expira_em                                                   DateTime?                @db.Timestamp(6)
+  id_profissao                                                            Int?
+  id_unidade_atendimento                                                  Int?
+  dt_cadastro                                                             DateTime?                @default(now()) @db.Timestamp(6)
+  atendimento_atendimento_id_usuario_pacienteTousuario                    atendimento[]            @relation("atendimento_id_usuario_pacienteTousuario")
+  atendimento_atendimento_id_usuario_cadTousuario                         atendimento[]            @relation("atendimento_id_usuario_cadTousuario")
+  atendimento_formulario                                                  atendimento_formulario[]
+  documentos                                                              documentos[]
+  formulario_avaliacao                                                    formulario_avaliacao[]
+  formulario_paciente                                                     formulario_paciente[]
+  log_adm_geral                                                           log_adm_geral[]
+  log_respostas                                                           log_respostas[]
+  pergunta                                                                pergunta[]
+  resposta                                                                resposta[]
+  unidade_atendimento_unidade_atendimento_id_usuario_cadTousuario         unidade_atendimento[]    @relation("unidade_atendimento_id_usuario_cadTousuario")
+  genero                                                                  genero?                  @relation(fields: [id_genero], references: [id_genero], onDelete: NoAction, onUpdate: NoAction, map: "fk_usuario_genero")
+  profissao                                                               profissao?               @relation(fields: [id_profissao], references: [id_profissao], onDelete: NoAction, onUpdate: NoAction, map: "fk_usuario_prof")
+  tipo_usuario                                                            tipo_usuario             @relation(fields: [id_tipo_usuario], references: [id_tipo_usuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_usuario_tipousu")
+  unidade_atendimento_usuario_id_unidade_atendimentoTounidade_atendimento unidade_atendimento?     @relation("usuario_id_unidade_atendimentoTounidade_atendimento", fields: [id_unidade_atendimento], references: [id_unidade_atendimento], onDelete: NoAction, onUpdate: NoAction, map: "fk_usuario_unidade")
+}
