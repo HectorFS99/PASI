@@ -87,6 +87,7 @@ model formulario_paciente {
   usuario                usuario             @relation(fields: [id_usuario_paciente], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_fp_paciente")
   situacao_formulario    situacao_formulario @relation(fields: [id_situacao_formulario], references: [id_situacao_formulario], onDelete: NoAction, onUpdate: NoAction, map: "fk_fp_situacao")
   resposta               resposta[]
+  log_respostas          log_respostas[]
 }
 
 model genero {
@@ -109,16 +110,20 @@ model log_adm_geral {
 }
 
 model log_respostas {
-  id_log_resposta Int       @id @default(autoincrement())
-  id_resposta     Int
-  valor_texto     String?   @db.VarChar(300)
-  valor_numero    Decimal?  @db.Decimal
-  valor_binario   Boolean?
-  valor_data      DateTime? @db.Date
-  dt_registro     DateTime  @default(now()) @db.Timestamp(6)
-  id_usuario      Int
-  resposta        resposta  @relation(fields: [id_resposta], references: [id_resposta], onDelete: NoAction, onUpdate: NoAction, map: "fk_lr_resposta")
-  usuario         usuario   @relation(fields: [id_usuario], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_lr_usuario")
+  id_log_resposta        Int                  @id @default(autoincrement())
+  id_resposta            Int?
+  valor_texto            String?              @db.VarChar(300)
+  valor_numero           Decimal?             @db.Decimal
+  valor_binario          Boolean?
+  valor_data             DateTime?            @db.Date
+  dt_registro            DateTime             @default(now()) @db.Timestamp(6)
+  id_usuario             Int
+  id_formulario_paciente Int?
+  id_pergunta            Int?
+  resposta               resposta?            @relation(fields: [id_resposta], references: [id_resposta], onDelete: SetNull, onUpdate: NoAction, map: "fk_lr_resposta")
+  usuario                usuario              @relation(fields: [id_usuario], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_lr_usuario")
+  formulario_paciente    formulario_paciente? @relation(fields: [id_formulario_paciente], references: [id_formulario_paciente], onDelete: NoAction, onUpdate: NoAction, map: "fk_lr_formpac")
+  pergunta               pergunta?            @relation(fields: [id_pergunta], references: [id_pergunta], onDelete: NoAction, onUpdate: NoAction, map: "fk_lr_pergunta")
 }
 
 model modulo {
@@ -151,6 +156,7 @@ model pergunta {
   tipo_pergunta    tipo_pergunta    @relation(fields: [id_tipo_pergunta], references: [id_tipo_pergunta], onDelete: NoAction, onUpdate: NoAction, map: "fk_perg_tipoperg")
   usuario          usuario?         @relation(fields: [id_usuario_cad], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_perg_usuario")
   resposta         resposta[]
+  log_respostas    log_respostas[]
 }
 
 model profissao {

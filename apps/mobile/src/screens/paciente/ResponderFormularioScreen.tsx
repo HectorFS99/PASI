@@ -166,12 +166,11 @@ export function ResponderFormularioScreen() {
       setSaving(true);
       try {
         await salvarRascunho();
-      } catch (err: any) {
-        toast(err?.response?.data?.message ?? 'Não foi possível salvar o rascunho.', 'error');
+      } catch {
+        toast('Não foi possível salvar o rascunho. O progresso pode ter sido perdido.', 'error');
+      } finally {
         setSaving(false);
-        return;
       }
-      setSaving(false);
     }
     navigation.goBack();
   };
