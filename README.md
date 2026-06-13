@@ -39,14 +39,17 @@ npm run prisma:generate --workspace apps/api
 # subir a API em modo dev
 npm run api:dev
 ```
+## URLs
 
 A documentação da API está disponível no Swagger, localizado em `[http://localhost:3000/docs]` ou `https://pasi-o3i4.onrender.com/api/docs]`.
 O banco está hospedado no Neon, conforme citado.
 A aplicação (camada de apresentação) está hospedada no Expo.dev, localizado em `https://pasi--je16s2zdh2.expo.app`.
 
-Integrantes/colaboradores:
+## Integrantes/colaboradores:
 
 - Ellen Eufrásio de Oliveira;
 - Hector Ferreira da Silva.
 
-OBS. : Este é um projeto em DESENVOLVIMENTO e pode sofrer alterações significativas no decorrer de sua evolução. A solução aqui foi apresentada como projeto integrador do 5º semestre do curso de Desenvolvimento de Software Multiplataforma da Faculdade de Tecnologia de Mauá. A ideia é evoluirmos o projeto para ser apresentado como Trabalho de Conclusão de Curso (TCC).
+## NOTA!
+
+Este é um projeto em DESENVOLVIMENTO e pode sofrer alterações significativas no decorrer de sua evolução. A solução aqui foi apresentada como projeto integrador do 5º semestre do curso de Desenvolvimento de Software Multiplataforma da Faculdade de Tecnologia de Mauá. A ideia é evoluirmos o projeto para ser apresentado como Trabalho de Conclusão de Curso (TCC).
