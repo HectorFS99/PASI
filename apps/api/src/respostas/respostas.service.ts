@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
@@ -17,6 +18,7 @@ import { RespostaItemDto, SalvarRespostasDto } from './dto/salvar-respostas.dto'
 
 @Injectable()
 export class RespostasService {
+  private readonly logger = new Logger(RespostasService.name);
   constructor(private readonly prisma: PrismaService) {}
 
   // ----------------------------------------------------------------
@@ -154,31 +156,130 @@ export class RespostasService {
     }
 
     const idsPerguntas = [...linhasPorPergunta.keys()];
-    const todasLinhas = [...linhasPorPergunta.values()].flat();
 
-    await this.prisma.$transaction(async (tx) => {
-      // Substitui o conjunto de respostas das perguntas enviadas.
-      await tx.resposta.deleteMany({
-        where: {
-          id_formulario_paciente: fp.id_formulario_paciente,
-          id_pergunta: { in: idsPerguntas },
-        },
-      });
-      for (const linha of todasLinhas) {
-        const resposta = await tx.resposta.create({ data: linha });
-        // Trilha de auditoria de cada valor registrado.
-        await tx.log_respostas.create({
-          data: {
-            id_resposta: resposta.id_resposta,
-            valor_texto: resposta.valor_texto,
-            valor_numero: resposta.valor_numero,
-            valor_binario: resposta.valor_binario,
-            valor_data: resposta.valor_data,
+    // Estado atual das respostas das perguntas enviadas.
+    const existentes = await this.prisma.resposta.findMany({
+      where: {
+        id_formulario_paciente: fp.id_formulario_paciente,
+        id_pergunta: { in: idsPerguntas },
+      },
+    });
+
+    // Reconcilia o estado atual com o desejado SEM trocar o id_resposta: a PK
+    // é estável (criada uma vez, mantida para sempre). Atualiza no lugar o que
+    // mudou, cria só o novo e apaga só o que foi removido.
+    const updates: { id_resposta: number; linha: Prisma.respostaCreateManyInput }[] = [];
+    const creates: Prisma.respostaCreateManyInput[] = [];
+    const deleteIds: number[] = [];
+    // Linhas (com id_resposta) que entram na trilha de auditoria nesta gravação.
+    const logComId: { id: number; linha: Prisma.respostaCreateManyInput }[] = [];
+
+    for (const idPergunta of idsPerguntas) {
+      const desejadas = linhasPorPergunta.get(idPergunta) ?? [];
+      const atuais = existentes.filter((e) => e.id_pergunta === idPergunta);
+      const multipla =
+        mapaPerguntas.get(idPergunta)?.id_tipo_pergunta ===
+        TipoPergunta.ESCOLHA_MULTIPLA;
+
+      if (multipla) {
+        // Cada opção é uma linha; casa por id_opcao (guardado em valor_numero).
+        const atuaisPorOpcao = new Map(
+          atuais.map((e) => [Number(e.valor_numero), e]),
+        );
+        const opcoesDesejadas = new Set(
+          desejadas.map((d) => Number(d.valor_numero)),
+        );
+        for (const linha of desejadas) {
+          const existente = atuaisPorOpcao.get(Number(linha.valor_numero));
+          if (existente) {
+            logComId.push({ id: existente.id_resposta, linha });
+          } else {
+            creates.push(linha);
+          }
+        }
+        for (const e of atuais) {
+          if (!opcoesDesejadas.has(Number(e.valor_numero))) {
+            deleteIds.push(e.id_resposta);
+          }
+        }
+      } else {
+        // Tipos de valor único: uma única linha por pergunta, atualizada no lugar.
+        const linha = desejadas[0];
+        const [existente, ...extras] = atuais;
+        if (linha && existente) {
+          updates.push({ id_resposta: existente.id_resposta, linha });
+          logComId.push({ id: existente.id_resposta, linha });
+        } else if (linha) {
+          creates.push(linha);
+        } else if (existente) {
+          deleteIds.push(existente.id_resposta);
+        }
+        // Higiene: remove duplicatas legadas da mesma pergunta.
+        for (const extra of extras) deleteIds.push(extra.id_resposta);
+      }
+    }
+
+    // Apenas os campos de valor (mantém id_resposta intacto no update).
+    const valores = (l: Prisma.respostaCreateManyInput) => ({
+      valor_texto: l.valor_texto ?? null,
+      valor_numero: l.valor_numero ?? null,
+      valor_binario: l.valor_binario ?? null,
+      valor_data: l.valor_data ?? null,
+    });
+
+    try {
+      // Um único round-trip atômico (transação em lote). Evita transação
+      // interativa, instável sobre o pooler (pgbouncer) do Neon.
+      const ops: Prisma.PrismaPromise<unknown>[] = [];
+      if (deleteIds.length > 0) {
+        ops.push(
+          this.prisma.resposta.deleteMany({
+            where: { id_resposta: { in: deleteIds } },
+          }),
+        );
+      }
+      for (const u of updates) {
+        ops.push(
+          this.prisma.resposta.update({
+            where: { id_resposta: u.id_resposta },
+            data: { ...valores(u.linha), dt_resposta: new Date() },
+          }),
+        );
+      }
+      const idxCreate = creates.length > 0 ? ops.length : -1;
+      if (creates.length > 0) {
+        ops.push(this.prisma.resposta.createManyAndReturn({ data: creates }));
+      }
+      const resultados = await this.prisma.$transaction(ops);
+      const criadas =
+        idxCreate >= 0
+          ? (resultados[idxCreate] as { id_resposta: number }[])
+          : [];
+
+      // Trilha de auditoria: ACRESCENTA (nunca remove) o snapshot desta
+      // gravação — uma linha por valor salvo, mantendo o id_resposta estável.
+      const linhasLog = [
+        ...logComId.map(({ id, linha }) => ({ id_resposta: id, linha })),
+        ...criadas.map((r, i) => ({
+          id_resposta: r.id_resposta,
+          linha: creates[i],
+        })),
+      ];
+      if (linhasLog.length > 0) {
+        await this.prisma.log_respostas.createMany({
+          data: linhasLog.map(({ id_resposta, linha }) => ({
+            id_resposta,
+            id_formulario_paciente: fp.id_formulario_paciente,
+            id_pergunta: linha.id_pergunta,
+            ...valores(linha),
             id_usuario: user.id_usuario,
-          },
+          })),
         });
       }
-    });
+    } catch (err) {
+      this.logger.error('Erro ao salvar respostas', err instanceof Error ? err.stack : err);
+      throw err;
+    }
 
     return this.detalhar(idAtendimento, idFormulario, user);
   }
@@ -231,17 +332,16 @@ export class RespostasService {
       id_usuario_pac: user.id_usuario,
     };
 
+    // Observação: este método é usado APENAS no salvar (rascunho). Campos
+    // vazios são apenas ignorados (return []); a exigência de perguntas
+    // obrigatórias é validada somente no concluir.
     switch (pergunta.id_tipo_pergunta) {
       case TipoPergunta.TEXTO: {
-        if (!item.valor_texto?.trim()) {
-          this.exigirSeObrigatoria(pergunta);
-          return [];
-        }
+        if (!item.valor_texto?.trim()) return [];
         return [{ ...base, valor_texto: item.valor_texto }];
       }
       case TipoPergunta.NUMERO: {
         if (item.valor_numero === undefined || item.valor_numero === null) {
-          this.exigirSeObrigatoria(pergunta);
           return [];
         }
         this.validarFaixaNumerica(pergunta, item.valor_numero);
@@ -249,17 +349,13 @@ export class RespostasService {
       }
       case TipoPergunta.BOOLEANO: {
         if (item.valor_binario === undefined || item.valor_binario === null) {
-          this.exigirSeObrigatoria(pergunta);
           return [];
         }
         return [{ ...base, valor_binario: item.valor_binario }];
       }
       case TipoPergunta.ESCOLHA_UNICA: {
         const ids = item.id_opcoes ?? [];
-        if (ids.length === 0) {
-          this.exigirSeObrigatoria(pergunta);
-          return [];
-        }
+        if (ids.length === 0) return [];
         if (ids.length !== 1) {
           throw new BadRequestException(
             `A pergunta "${pergunta.pergunta}" aceita apenas uma opção.`,
@@ -269,10 +365,7 @@ export class RespostasService {
       }
       case TipoPergunta.ESCOLHA_MULTIPLA: {
         const ids = item.id_opcoes ?? [];
-        if (ids.length === 0) {
-          this.exigirSeObrigatoria(pergunta);
-          return [];
-        }
+        if (ids.length === 0) return [];
         return ids.map((idOpcao) => this.linhaOpcao(base, pergunta, idOpcao));
       }
       default:
@@ -300,14 +393,6 @@ export class RespostasService {
       valor_numero: opcao.id_opcao,
       valor_texto: opcao.texto_opcao,
     };
-  }
-
-  private exigirSeObrigatoria(pergunta: { obrigatoria: boolean | null; pergunta: string }) {
-    if (pergunta.obrigatoria) {
-      throw new BadRequestException(
-        `A pergunta obrigatória "${pergunta.pergunta}" precisa ser respondida.`,
-      );
-    }
   }
 
   private validarFaixaNumerica(

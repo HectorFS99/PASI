@@ -20,6 +20,12 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "bc6fede7-12b1-444a-a43e-6704055635af"
+      }
+    },
+    "owner": "fhector-expoprojects"
   }
 }
