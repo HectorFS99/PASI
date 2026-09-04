@@ -41,7 +41,7 @@ npm run api:dev
 ```
 ## URLs
 
-A documentação da API está disponível no Swagger, localizado em `[http://localhost:3000/docs]` ou `https://pasi-o3i4.onrender.com/api/docs]`.
+A documentação da API está disponível no Swagger, localizado em `http://localhost:3000/docs` ou `https://pasi-o3i4.onrender.com/api/docs`.
 O banco está hospedado no Neon, conforme citado.
 A aplicação (camada de apresentação) está hospedada no Expo.dev, localizado em `https://pasi--je16s2zdh2.expo.app`.
 
