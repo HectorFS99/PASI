@@ -50,6 +50,7 @@ A aplicação (camada de apresentação) está hospedada no Expo.dev, localizado
 - Camila Souza Arruda (Projeto Integrador);
 - Ellen Eufrásio de Oliveira;
 - Hector Ferreira da Silva.
+- Anna Carolina de Azevedo Leite
 
 ## NOTA!
 
