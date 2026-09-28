@@ -25,6 +25,17 @@ export function isCpfValido(cpf: string): boolean {
 }
 
 /**
+ * Regra de senha forte — a mesma exigida pela API (SENHA_REGEX em
+ * apps/api/src/common/constants.ts).
+ */
+export const SENHA_MENSAGEM =
+  'Mín. 8 caracteres, com maiúscula, minúscula, número e caractere especial';
+
+export function isSenhaForte(senha: string): boolean {
+  return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/.test(senha);
+}
+
+/**
  * Valida e-mail exigindo um domínio com TLD (ex.: usuario@dominio.com),
  * não apenas a presença de "@".
  */

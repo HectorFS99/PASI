@@ -9,12 +9,13 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
 import { useNavigation } from '@react-navigation/native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { InputField } from '../components/InputField';
+import { SelectField } from '../components/SelectField';
+import { SegmentedControl } from '../components/SegmentedControl';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { FormFooter } from '../components/FormFooter';
 import { EnderecoFields, EnderecoValues } from '../components/EnderecoFields';
@@ -24,13 +25,12 @@ import { useFeedback } from '../context/FeedbackContext';
 import { useScrollToError } from '../hooks/useScrollToError';
 import { usuariosService, AtualizarPerfilPayload } from '../services/usuarios';
 import { apoioService } from '../services/apoio';
+import { SEXO_OPCOES, Sexo, TipoUsuario } from '../constants/dominio';
+import { colors } from '../constants/colors';
 import { formatTelefone, cleanMask } from '../utils/masks';
 import { isEmailValido } from '../utils/validation';
 import { maskCpf } from '../utils/format';
-
-const SEXO_OPTIONS = ['Masculino', 'Feminino', 'Outro'] as const;
-const SEXO_TO_VALUE: Record<string, string> = { Masculino: 'M', Feminino: 'F', Outro: 'O' };
-const VALUE_TO_SEXO: Record<string, string> = { M: 'Masculino', F: 'Feminino', O: 'Outro' };
+import { mensagemErroApi } from '../utils/errors';
 
 type Genero = { id_genero: number; nome: string };
 
@@ -58,13 +58,12 @@ function iniciais(nome?: string) {
 
 export function PerfilScreen() {
   const navigation = useNavigation();
-  const insets = useSafeAreaInsets();
   const { usuario, updateUsuario } = useAuth();
   const { foto, setFoto } = useProfilePhoto();
   const { toast } = useFeedback();
   const { scrollRef, registrarBase, registrar, scrollPara } = useScrollToError();
 
-  const isProfissional = usuario?.tipo === 1;
+  const isProfissional = usuario?.tipo === TipoUsuario.PROFISSIONAL;
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -77,7 +76,7 @@ export function PerfilScreen() {
   const [email, setEmail] = useState('');
   const [tel, setTel] = useState('');
   const [dtNascimento, setDtNascimento] = useState('');
-  const [sexo, setSexo] = useState('');
+  const [sexo, setSexo] = useState<Sexo | null>(null);
   const [idGenero, setIdGenero] = useState<number | null>(null);
   const [nacEstrangeira, setNacEstrangeira] = useState(false);
   const [cep, setCep] = useState('');
@@ -111,7 +110,7 @@ export function PerfilScreen() {
         setEmail(u.email ?? '');
         setTel(u.tel_celular ? formatTelefone(u.tel_celular) : '');
         setDtNascimento(isoParaBr(u.dt_nascimento));
-        setSexo(VALUE_TO_SEXO[u.sexo] ?? '');
+        setSexo(SEXO_OPCOES.find((o) => o.value === u.sexo)?.value ?? null);
         setIdGenero(u.id_genero ?? null);
         setNacEstrangeira(!!u.nac_estrangeira);
         setCep(u.cep ? (u.cep.length > 5 ? `${u.cep.slice(0, 5)}-${u.cep.slice(5)}` : u.cep) : '');
@@ -176,7 +175,7 @@ export function PerfilScreen() {
         nome: nome.trim(),
         email: email.trim().toLowerCase(),
         tel_celular: cleanMask(tel),
-        sexo: SEXO_TO_VALUE[sexo] ?? 'O',
+        sexo: sexo ?? 'O',
         id_genero: idGenero ?? undefined,
         // Endereço e nascimento só fazem parte do perfil do paciente.
         ...(isProfissional
@@ -197,9 +196,8 @@ export function PerfilScreen() {
       await usuariosService.atualizarPerfil(payload);
       await updateUsuario({ nome: payload.nome, email: payload.email });
       toast('Seus dados foram atualizados.', 'success');
-    } catch (err: any) {
-      const msg = err?.response?.data?.message ?? 'Não foi possível salvar as alterações.';
-      toast(Array.isArray(msg) ? msg[0] : msg, 'error');
+    } catch (err) {
+      toast(mensagemErroApi(err, 'Não foi possível salvar as alterações.'), 'error');
     } finally {
       setSaving(false);
     }
@@ -208,22 +206,14 @@ export function PerfilScreen() {
   if (loading) {
     return (
       <View className="flex-1 bg-white items-center justify-center">
-        <ActivityIndicator color="#0D2347" />
+        <ActivityIndicator color={colors.primary} />
       </View>
     );
   }
 
   return (
     <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      {/* Header */}
-      <View className="bg-primary px-6" style={{ paddingTop: Math.max(insets.top, 16), paddingBottom: 16 }}>
-        <View className="flex-row items-center gap-3">
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <MaterialIcons name="arrow-back" size={24} color="white" />
-          </TouchableOpacity>
-          <Text className="text-white text-lg font-bold">Meu Perfil</Text>
-        </View>
-      </View>
+      <ScreenHeader title="Meu Perfil" onBack={() => navigation.goBack()} />
 
       <ScrollView
         ref={scrollRef}
@@ -267,7 +257,7 @@ export function PerfilScreen() {
             <Text className="text-sm font-medium text-gray-700 mb-1">CPF</Text>
             <View className="flex-row items-center bg-gray-100 border border-border rounded-xl px-4 h-12">
               <Text className="flex-1 text-sm text-gray-500">{maskCpf(cpf)}</Text>
-              <MaterialIcons name="lock" size={16} color="#9CA3AF" />
+              <MaterialIcons name="lock" size={16} color={colors.gray400} />
             </View>
             <Text className="text-muted text-xs mt-1">O CPF não pode ser alterado.</Text>
           </View>
@@ -313,37 +303,16 @@ export function PerfilScreen() {
             />
           )}
 
-          {/* Sexo */}
-          <Text className="text-sm font-medium text-gray-700 mb-2">Sexo</Text>
-          <View className="flex-row gap-2 mb-4">
-            {SEXO_OPTIONS.map((s) => (
-              <TouchableOpacity
-                key={s}
-                onPress={() => setSexo(s)}
-                className={`flex-1 h-11 rounded-xl border items-center justify-center ${
-                  sexo === s ? 'bg-primary border-primary' : 'bg-white border-border'
-                }`}
-              >
-                <Text className={`text-sm font-medium ${sexo === s ? 'text-white' : 'text-gray-600'}`}>
-                  {s}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          <SegmentedControl label="Sexo" options={SEXO_OPCOES} value={sexo} onChange={setSexo} />
 
           {/* Gênero — apenas paciente */}
           {!isProfissional && generos.length > 0 && (
-            <>
-              <Text className="text-sm font-medium text-gray-700 mb-1">Gênero</Text>
-              <View className="bg-input-bg border border-border rounded-xl mb-4">
-                <Picker selectedValue={idGenero} onValueChange={(v) => setIdGenero(v)}>
-                  <Picker.Item label="Selecione" value={null} />
-                  {generos.map((g) => (
-                    <Picker.Item key={g.id_genero} label={g.nome} value={g.id_genero} />
-                  ))}
-                </Picker>
-              </View>
-            </>
+            <SelectField
+              label="Gênero"
+              value={idGenero}
+              onChange={setIdGenero}
+              options={generos.map((g) => ({ value: g.id_genero, label: g.nome }))}
+            />
           )}
         </View>
 

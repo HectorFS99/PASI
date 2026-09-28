@@ -1,5 +1,9 @@
 import React, { useRef, useState } from 'react';
 import { View, Text, Pressable, Modal, Animated, Dimensions, Platform } from 'react-native';
+import { colors } from '../constants/colors';
+
+// As tabelas abaixo são a paleta própria de cada status (fundo + texto do badge),
+// por isso ficam aqui e não em constants/colors.
 
 interface StyleDef {
   bg: string;
@@ -122,7 +126,7 @@ export function StatusBadge({ status, variant = 'atendimento', tooltip = false }
                 top: tipPos.top,
                 left: tipPos.left,
                 width: TOOLTIP_WIDTH,
-                backgroundColor: '#0D2347',
+                backgroundColor: colors.primary,
                 borderRadius: 12,
                 paddingVertical: 10,
                 paddingHorizontal: 12,
@@ -141,14 +145,14 @@ export function StatusBadge({ status, variant = 'atendimento', tooltip = false }
                     }),
                   },
                 ],
-                shadowColor: '#000',
+                shadowColor: colors.black,
                 shadowOpacity: 0.25,
                 shadowRadius: 10,
                 shadowOffset: { width: 0, height: 4 },
                 elevation: 6,
               }}
             >
-              <Text style={{ color: s.text === '#FFFFFF' ? '#fff' : s.text, fontSize: 11, fontWeight: '700', marginBottom: 3 }}>
+              <Text style={{ color: s.text, fontSize: 11, fontWeight: '700', marginBottom: 3 }}>
                 {s.label}
               </Text>
               <Text style={{ color: 'white', fontSize: 12, lineHeight: 17 }}>{tipText}</Text>

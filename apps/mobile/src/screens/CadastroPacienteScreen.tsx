@@ -1,18 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  TouchableOpacity,
-} from 'react-native';
-import { Picker } from '@react-native-picker/picker';
+import { View, Text, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { NavigationProp } from '../navigation/types';
 import { StepIndicator } from '../components/StepIndicator';
 import { InputField } from '../components/InputField';
+import { SelectField } from '../components/SelectField';
+import { SegmentedControl } from '../components/SegmentedControl';
+import { Checkbox } from '../components/Checkbox';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { FormFooter } from '../components/FormFooter';
 import { EnderecoFields, EnderecoValues } from '../components/EnderecoFields';
@@ -20,12 +16,13 @@ import { authService } from '../services/auth';
 import { apoioService } from '../services/apoio';
 import { useFeedback } from '../context/FeedbackContext';
 import { useScrollToError } from '../hooks/useScrollToError';
+import { SEXO_OPCOES, Sexo } from '../constants/dominio';
 import { formatCPF, formatTelefone, cleanMask } from '../utils/masks';
-import { isCpfValido, isEmailValido } from '../utils/validation';
+import { isCpfValido, isEmailValido, isSenhaForte, SENHA_MENSAGEM } from '../utils/validation';
+import { mensagemErroApi } from '../utils/errors';
+import { colors } from '../constants/colors';
 
 const STEPS = ['Pessoal', 'Endereço', 'Acesso'];
-const SEXO_OPTIONS = ['Masculino', 'Feminino', 'Outro'] as const;
-const SEXO_VALUE: Record<string, string> = { Masculino: 'M', Feminino: 'F', Outro: 'O' };
 
 type Genero = { id_genero: number; nome: string };
 
@@ -42,7 +39,7 @@ export function CadastroPacienteScreen() {
   const [email, setEmail] = useState('');
   const [tel, setTel] = useState('');
   const [dtNascimento, setDtNascimento] = useState('');
-  const [sexo, setSexo] = useState('');
+  const [sexo, setSexo] = useState<Sexo | null>(null);
   const [generos, setGeneros] = useState<Genero[]>([]);
   const [idGenero, setIdGenero] = useState<number | null>(null);
   const [nacEstrangeira, setNacEstrangeira] = useState(false);
@@ -103,7 +100,7 @@ export function CadastroPacienteScreen() {
 
   const handleSubmit = async () => {
     const e: Record<string, string> = {};
-    if (senha.length < 8) e.senha = 'Mínimo 8 caracteres';
+    if (!isSenhaForte(senha)) e.senha = SENHA_MENSAGEM;
     if (senha !== confirmarSenha) e.confirmarSenha = 'As senhas não coincidem';
     setErrors(e);
     if (Object.keys(e).length > 0) return;
@@ -121,7 +118,7 @@ export function CadastroPacienteScreen() {
         cpf: cleanMask(cpf),
         email: email.toLowerCase().trim(),
         tel_celular: cleanMask(tel),
-        sexo: SEXO_VALUE[sexo] ?? 'O',
+        sexo: sexo ?? 'O',
         dt_nascimento: dtFormatted,
         nac_estrangeira: nacEstrangeira,
         id_genero: idGenero ?? undefined,
@@ -137,9 +134,8 @@ export function CadastroPacienteScreen() {
       });
       toast('Cadastro realizado! Faça login para continuar.', 'success');
       navigation.navigate('Login');
-    } catch (err: any) {
-      const msg = err?.response?.data?.message ?? 'Erro ao cadastrar. Tente novamente.';
-      toast(Array.isArray(msg) ? msg[0] : msg, 'error');
+    } catch (err) {
+      toast(mensagemErroApi(err, 'Erro ao cadastrar. Tente novamente.'), 'error');
     } finally {
       setLoading(false);
     }
@@ -151,14 +147,12 @@ export function CadastroPacienteScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView ref={scrollRef} className="flex-1 bg-white" keyboardShouldPersistTaps="handled">
-        {/* Header */}
-        <View className="bg-primary px-6 pt-14 pb-4">
-          <TouchableOpacity onPress={() => navigation.goBack()} className="mb-3 self-start p-1">
-            <MaterialIcons name="arrow-back" size={24} color="white" />
-          </TouchableOpacity>
-          <Text className="text-white text-xl font-bold">Cadastro Paciente</Text>
-          <Text className="text-white/70 text-sm">Preencha seus dados pessoais</Text>
-        </View>
+        <ScreenHeader
+          variant="large"
+          title="Cadastro Paciente"
+          subtitle="Preencha seus dados pessoais"
+          onBack={() => navigation.goBack()}
+        />
 
         <StepIndicator steps={STEPS} current={step} />
 
@@ -227,56 +221,22 @@ export function CadastroPacienteScreen() {
                 maxLength={10}
               />
 
-              {/* Sexo */}
-              <Text className="text-sm font-medium text-gray-700 mb-2">Sexo</Text>
-              <View className="flex-row gap-2 mb-4">
-                {SEXO_OPTIONS.map((s) => (
-                  <TouchableOpacity
-                    key={s}
-                    onPress={() => setSexo(s)}
-                    className={`flex-1 h-11 rounded-xl border items-center justify-center ${
-                      sexo === s ? 'bg-primary border-primary' : 'bg-white border-border'
-                    }`}
-                  >
-                    <Text
-                      className={`text-sm font-medium ${
-                        sexo === s ? 'text-white' : 'text-gray-600'
-                      }`}
-                    >
-                      {s}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+              <SegmentedControl label="Sexo" options={SEXO_OPCOES} value={sexo} onChange={setSexo} />
 
-              {/* Gênero */}
-              <Text className="text-sm font-medium text-gray-700 mb-1">Gênero</Text>
-              <View className="bg-input-bg border border-border rounded-xl mb-4">
-                <Picker
-                  selectedValue={idGenero}
-                  onValueChange={(v) => setIdGenero(v)}
-                >
-                  <Picker.Item label="Selecione" value={null} />
-                  {generos.map((g) => (
-                    <Picker.Item key={g.id_genero} label={g.nome} value={g.id_genero} />
-                  ))}
-                </Picker>
-              </View>
+              <SelectField
+                label="Gênero"
+                value={idGenero}
+                onChange={setIdGenero}
+                options={generos.map((g) => ({ value: g.id_genero, label: g.nome }))}
+              />
 
-              {/* Nacionalidade estrangeira */}
-              <TouchableOpacity
-                onPress={() => setNacEstrangeira((v) => !v)}
-                className="flex-row items-center mb-6"
-              >
-                <View
-                  className={`w-5 h-5 rounded border-2 mr-3 items-center justify-center ${
-                    nacEstrangeira ? 'bg-primary border-primary' : 'bg-white border-border'
-                  }`}
-                >
-                  {nacEstrangeira && <MaterialIcons name="check" size={12} color="white" />}
-                </View>
-                <Text className="text-sm text-gray-700">Nacionalidade estrangeira</Text>
-              </TouchableOpacity>
+              <View className="mb-6">
+                <Checkbox
+                  label="Nacionalidade estrangeira"
+                  checked={nacEstrangeira}
+                  onToggle={() => setNacEstrangeira((v) => !v)}
+                />
+              </View>
             </>
           )}
 
@@ -293,7 +253,7 @@ export function CadastroPacienteScreen() {
           {step === 3 && (
             <>
               <View className="bg-success-bg border border-success-border rounded-xl p-4 mb-6 flex-row items-start">
-                <MaterialIcons name="info-outline" size={16} color="#276749" style={{ marginRight: 8, marginTop: 1 }} />
+                <MaterialIcons name="info-outline" size={16} color={colors.successText} style={{ marginRight: 8, marginTop: 1 }} />
                 <Text className="text-success-text text-xs leading-relaxed flex-1">
                   Você receberá nível de acesso <Text className="font-bold">Mínimo</Text> —
                   poderá visualizar e responder seus próprios formulários de atendimento.

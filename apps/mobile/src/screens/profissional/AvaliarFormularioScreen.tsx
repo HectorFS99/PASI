@@ -3,16 +3,15 @@ import {
   View,
   Text,
   ScrollView,
-  TouchableOpacity,
   TextInput,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { ProfissionalNavProp, ProfissionalStackParamList } from '../../navigation/types';
+import { ScreenHeader } from '../../components/ScreenHeader';
 import { FormFooter } from '../../components/FormFooter';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import {
@@ -23,20 +22,16 @@ import {
 } from '../../services/formularios';
 import { avaliacoesService } from '../../services/avaliacoes';
 import { useFeedback } from '../../context/FeedbackContext';
+import { TipoPergunta, TIPOS_COM_OPCOES } from '../../constants/dominio';
+import { colors } from '../../constants/colors';
+import { mensagemErroApi } from '../../utils/errors';
 
 type RouteT = RouteProp<ProfissionalStackParamList, 'AvaliarFormulario'>;
-
-const TEXTO = 1;
-const NUMERO = 2;
-const BOOLEANO = 3;
-const ESCOLHA_UNICA = 4;
-const ESCOLHA_MULTIPLA = 5;
 
 const MAX_OBS = 500;
 
 export function AvaliarFormularioScreen() {
   const navigation = useNavigation<ProfissionalNavProp>();
-  const insets = useSafeAreaInsets();
   const { toast, confirm } = useFeedback();
   const { idAtendimento, idFormulario, nomeFormulario, modo } = useRoute<RouteT>().params;
   const ehAvaliar = modo === 'avaliar';
@@ -80,11 +75,8 @@ export function AvaliarFormularioScreen() {
       await avaliacoesService.avaliar(idAtendimento, idFormulario, observacao.trim());
       toast('Avaliação registrada com sucesso!', 'success');
       navigation.goBack();
-    } catch (err: any) {
-      toast(
-        err?.response?.data?.message ?? 'Não foi possível registrar a avaliação.',
-        'error',
-      );
+    } catch (err) {
+      toast(mensagemErroApi(err, 'Não foi possível registrar a avaliação.'), 'error');
     } finally {
       setSaving(false);
     }
@@ -93,7 +85,7 @@ export function AvaliarFormularioScreen() {
   if (loading || !detalhe) {
     return (
       <View className="flex-1 bg-white items-center justify-center">
-        <ActivityIndicator color="#0D2347" />
+        <ActivityIndicator color={colors.primary} />
       </View>
     );
   }
@@ -114,12 +106,12 @@ export function AvaliarFormularioScreen() {
       return <Text className="text-sm text-muted italic">Sem resposta</Text>;
     }
 
-    if ([ESCOLHA_UNICA, ESCOLHA_MULTIPLA].includes(p.id_tipo_pergunta)) {
+    if (TIPOS_COM_OPCOES.includes(p.id_tipo_pergunta)) {
       return (
         <View className="gap-1">
           {rs.map((r, i) => (
             <View key={i} className="flex-row items-center">
-              <MaterialIcons name="check-circle" size={16} color="#16A34A" style={{ marginRight: 8 }} />
+              <MaterialIcons name="check-circle" size={16} color={colors.success} style={{ marginRight: 8 }} />
               <Text className="text-sm text-gray-800 flex-1">{r.valor_texto ?? '—'}</Text>
             </View>
           ))}
@@ -128,14 +120,14 @@ export function AvaliarFormularioScreen() {
     }
 
     const r = rs[0];
-    if (p.id_tipo_pergunta === BOOLEANO) {
+    if (p.id_tipo_pergunta === TipoPergunta.BOOLEANO) {
       return (
         <Text className="text-sm font-medium text-gray-800">
           {r.valor_binario ? 'Sim' : 'Não'}
         </Text>
       );
     }
-    if (p.id_tipo_pergunta === NUMERO) {
+    if (p.id_tipo_pergunta === TipoPergunta.NUMERO) {
       return (
         <Text className="text-sm font-medium text-gray-800">
           {r.valor_numero !== undefined && r.valor_numero !== null ? String(r.valor_numero) : '—'}
@@ -147,22 +139,11 @@ export function AvaliarFormularioScreen() {
 
   return (
     <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      {/* Header */}
-      <View className="bg-primary px-6" style={{ paddingTop: Math.max(insets.top, 16), paddingBottom: 16 }}>
-        <View className="flex-row items-center gap-3">
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <MaterialIcons name="arrow-back" size={24} color="white" />
-          </TouchableOpacity>
-          <View className="flex-1">
-            <Text className="text-white text-lg font-bold" numberOfLines={1}>
-              {ehAvaliar ? 'Avaliar Formulário' : 'Visualizar Respostas'}
-            </Text>
-            {nomeFormulario ? (
-              <Text className="text-white/70 text-xs" numberOfLines={1}>{nomeFormulario}</Text>
-            ) : null}
-          </View>
-        </View>
-      </View>
+      <ScreenHeader
+        title={ehAvaliar ? 'Avaliar Formulário' : 'Visualizar Respostas'}
+        subtitle={nomeFormulario}
+        onBack={() => navigation.goBack()}
+      />
 
       <ScrollView
         className="flex-1 bg-white"
@@ -205,7 +186,7 @@ export function AvaliarFormularioScreen() {
                 erroObs ? 'border-red-400' : 'border-border'
               }`}
               placeholder="Descreva sua avaliação..."
-              placeholderTextColor="#A0AEC0"
+              placeholderTextColor={colors.placeholder}
               value={observacao}
               onChangeText={(t) => {
                 setObservacao(t.slice(0, MAX_OBS));

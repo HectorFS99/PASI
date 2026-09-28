@@ -10,22 +10,20 @@ import {
   Platform,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PacienteNavProp, PacienteStackParamList } from '../../navigation/types';
+import { ScreenHeader } from '../../components/ScreenHeader';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { FormFooter } from '../../components/FormFooter';
 import { MaterialIcons } from '@expo/vector-icons';
 import { formulariosService, Pergunta, RespostaItem, DetalheFormulario } from '../../services/formularios';
 import { useFeedback } from '../../context/FeedbackContext';
+import { SituacaoFormulario, TipoPergunta, TIPOS_COM_OPCOES } from '../../constants/dominio';
+import { colors } from '../../constants/colors';
+import { mensagemErroApi } from '../../utils/errors';
 
 type RouteT = RouteProp<PacienteStackParamList, 'ResponderFormulario'>;
 
-// Tipo de pergunta (espelha as constantes da API)
-const TEXTO = 1;
-const NUMERO = 2;
-const BOOLEANO = 3;
-const ESCOLHA_UNICA = 4;
-const ESCOLHA_MULTIPLA = 5;
+const { TEXTO, NUMERO, BOOLEANO, ESCOLHA_UNICA } = TipoPergunta;
 
 type RespostasMap = Record<number, RespostaItem>;
 
@@ -54,7 +52,6 @@ function initRespostas(perguntas: Pergunta[], respostasAtuais: DetalheFormulario
 
 export function ResponderFormularioScreen() {
   const navigation = useNavigation<PacienteNavProp>();
-  const insets = useSafeAreaInsets();
   const { toast, confirm } = useFeedback();
   const { idAtendimento, idFormulario, nomeFormulario } = useRoute<RouteT>().params;
 
@@ -83,7 +80,7 @@ export function ResponderFormularioScreen() {
         // valor_numero chega como string (Decimal). Para escolhas é o id_opcao;
         // para NUMERO é o valor digitado.
         if (r.valor_numero !== undefined && r.valor_numero !== null) {
-          if ([ESCOLHA_UNICA, ESCOLHA_MULTIPLA].includes(p.id_tipo_pergunta)) {
+          if (TIPOS_COM_OPCOES.includes(p.id_tipo_pergunta)) {
             if (!opcs[r.id_pergunta]) opcs[r.id_pergunta] = [];
             opcs[r.id_pergunta].push(Number(r.valor_numero));
           } else if (p.id_tipo_pergunta === NUMERO) {
@@ -104,7 +101,8 @@ export function ResponderFormularioScreen() {
   useEffect(() => { load(); }, [load]);
 
   // Respondido ou além (em avaliação / avaliado): somente leitura para o paciente.
-  const concluido = (detalhe?.formulario_paciente?.id_situacao_formulario ?? 0) >= 2;
+  const concluido =
+    (detalhe?.formulario_paciente?.id_situacao_formulario ?? 0) >= SituacaoFormulario.RESPONDIDO;
 
   const setResposta = (idPergunta: number, campo: Partial<RespostaItem>) => {
     setRespostas((prev) => ({
@@ -141,7 +139,7 @@ export function ResponderFormularioScreen() {
   const buildPayload = (): RespostaItem[] => {
     if (!detalhe) return [];
     return detalhe.formulario.pergunta.map((p) => {
-      if ([ESCOLHA_UNICA, ESCOLHA_MULTIPLA].includes(p.id_tipo_pergunta)) {
+      if (TIPOS_COM_OPCOES.includes(p.id_tipo_pergunta)) {
         return { id_pergunta: p.id_pergunta, id_opcoes: opcoesSelecionadas[p.id_pergunta] ?? [] };
       }
       if (p.id_tipo_pergunta === NUMERO) {
@@ -190,8 +188,8 @@ export function ResponderFormularioScreen() {
       await formulariosService.concluir(idAtendimento, idFormulario);
       toast('Formulário enviado com sucesso!', 'success');
       navigation.goBack();
-    } catch (err: any) {
-      toast(err?.response?.data?.message ?? 'Não foi possível enviar.', 'error');
+    } catch (err) {
+      toast(mensagemErroApi(err, 'Não foi possível enviar.'), 'error');
     } finally {
       setSending(false);
     }
@@ -200,7 +198,7 @@ export function ResponderFormularioScreen() {
   if (loading || !detalhe) {
     return (
       <View className="flex-1 bg-white items-center justify-center">
-        <ActivityIndicator color="#0D2347" />
+        <ActivityIndicator color={colors.primary} />
       </View>
     );
   }
@@ -209,7 +207,7 @@ export function ResponderFormularioScreen() {
   // Conta PERGUNTAS respondidas (agrupando por pergunta) e não a quantidade de
   // opções marcadas — uma pergunta de múltipla escolha conta como 1.
   const perguntaRespondida = (p: Pergunta): boolean => {
-    if ([ESCOLHA_UNICA, ESCOLHA_MULTIPLA].includes(p.id_tipo_pergunta)) {
+    if (TIPOS_COM_OPCOES.includes(p.id_tipo_pergunta)) {
       return (opcoesSelecionadas[p.id_pergunta] ?? []).length > 0;
     }
     if (p.id_tipo_pergunta === NUMERO) {
@@ -227,26 +225,15 @@ export function ResponderFormularioScreen() {
 
   return (
     <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      {/* Header com progresso */}
-      <View
-        className="bg-primary px-6"
-        style={
-          concluido
-            ? { paddingTop: Math.max(insets.top, 24), paddingBottom: 24 }
-            : { paddingTop: Math.max(insets.top, 48), paddingBottom: 16 }
-        }
+      <ScreenHeader
+        title={nomeFormulario}
+        subtitle={`${respondidas} de ${perguntas.length} respondidas`}
+        onBack={voltar}
       >
-        <TouchableOpacity onPress={voltar} className="mb-2 self-start flex-row items-center gap-1.5">
-          <MaterialIcons name="arrow-back" size={20} color="white" />
-          <Text className="text-white text-base">{nomeFormulario}</Text>
-        </TouchableOpacity>
-        <Text className="text-white/70 text-xs mb-2">
-          {respondidas} de {perguntas.length} respondidas
-        </Text>
         <View className="h-1.5 bg-white/20 rounded-full">
           <View className="h-1.5 bg-white rounded-full" style={{ width: `${progresso * 100}%` }} />
         </View>
-      </View>
+      </ScreenHeader>
 
       <ScrollView className="flex-1 bg-white" contentContainerStyle={{ padding: 20, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
         {/* Descrição do formulário */}
@@ -273,7 +260,7 @@ export function ResponderFormularioScreen() {
                 <TextInput
                   className="bg-input-bg border border-border rounded-xl px-4 py-3 text-sm text-gray-800"
                   placeholder="Digite sua resposta..."
-                  placeholderTextColor="#A0AEC0"
+                  placeholderTextColor={colors.placeholder}
                   value={respostas[p.id_pergunta]?.valor_texto ?? ''}
                   onChangeText={(t) => setResposta(p.id_pergunta, { valor_texto: t })}
                   multiline
@@ -293,7 +280,7 @@ export function ResponderFormularioScreen() {
               <TextInput
                 className="bg-input-bg border border-border rounded-xl px-4 h-12 text-sm text-gray-800"
                 placeholder="Digite um número"
-                placeholderTextColor="#A0AEC0"
+                placeholderTextColor={colors.placeholder}
                 keyboardType="numeric"
                 value={numeroTexto[p.id_pergunta] ?? ''}
                 onChangeText={(t) => onChangeNumero(p.id_pergunta, t)}
@@ -331,7 +318,7 @@ export function ResponderFormularioScreen() {
             )}
 
             {/* ESCOLHA_UNICA / ESCOLHA_MULTIPLA */}
-            {[ESCOLHA_UNICA, ESCOLHA_MULTIPLA].includes(p.id_tipo_pergunta) &&
+            {TIPOS_COM_OPCOES.includes(p.id_tipo_pergunta) &&
               p.opcao_pergunta.map((op) => {
                 const sel = (opcoesSelecionadas[p.id_pergunta] ?? []).includes(op.id_opcao);
                 return (
@@ -356,7 +343,7 @@ export function ResponderFormularioScreen() {
         {concluido && (
           <View className="bg-success-bg border border-success-border rounded-xl p-4 mt-4">
             <View className="flex-row items-center justify-center gap-1.5">
-              <MaterialIcons name="check-circle" size={16} color="#276749" />
+              <MaterialIcons name="check-circle" size={16} color={colors.successText} />
               <Text className="text-success-text text-sm font-medium">Formulário enviado — obrigado!</Text>
             </View>
           </View>

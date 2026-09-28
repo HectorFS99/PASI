@@ -46,8 +46,19 @@ export interface ListaAtendimentos {
   totalPages: number;
 }
 
+export interface FiltrosAtendimento {
+  page?: number;
+  limit?: number;
+  search?: string;
+  /** IDs de situação separados por vírgula. */
+  situacoes?: string;
+  data_inicio?: string;
+  data_fim?: string;
+  ordenar_por?: 'data_desc' | 'data_asc' | 'paciente' | 'situacao';
+}
+
 export const atendimentosService = {
-  listar: (params?: { page?: number; limit?: number; search?: string }) =>
+  listar: (params?: FiltrosAtendimento) =>
     api.get<ListaAtendimentos>('/atendimentos', { params }).then((r) => r.data),
 
   buscar: (id: number) => api.get<Atendimento>(`/atendimentos/${id}`).then((r) => r.data),

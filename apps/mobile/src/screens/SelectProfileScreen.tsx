@@ -4,6 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { NavigationProp } from '../navigation/types';
 import { FormFooter } from '../components/FormFooter';
+import { colors } from '../constants/colors';
 
 interface CardProps {
   title: string;
@@ -26,7 +27,7 @@ function ProfileCard({ title, description, icon, onPress }: CardProps) {
         <Text className="text-primary font-semibold text-base">{title}</Text>
         <Text className="text-muted text-xs mt-0.5">{description}</Text>
       </View>
-      <MaterialIcons name="chevron-right" size={20} color="#A0AEC0" />
+      <MaterialIcons name="chevron-right" size={20} color={colors.placeholder} />
     </TouchableOpacity>
   );
 }
@@ -56,14 +57,14 @@ export function SelectProfileScreen() {
         <ProfileCard
           title="Sou profissional"
           description="Cadastre-se como profissional e tenha acesso às ferramentas de atendimento."
-          icon={<MaterialIcons name="work" size={26} color="#0D2347" />}
+          icon={<MaterialIcons name="work" size={26} color={colors.primary} />}
           onPress={() => navigation.navigate('CadastroProfissional')}
         />
 
         <ProfileCard
           title="Sou paciente"
           description="Cadastre-se como paciente e acompanhe seus atendimentos e formulários."
-          icon={<MaterialIcons name="person" size={26} color="#0D2347" />}
+          icon={<MaterialIcons name="person" size={26} color={colors.primary} />}
           onPress={() => navigation.navigate('CadastroPaciente')}
         />
       </View>

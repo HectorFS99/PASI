@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, Linking } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { InputField } from './InputField';
 import { buscarCep } from '../services/apoio';
+import { colors } from '../constants/colors';
 
 const CORREIOS_URL = 'https://buscacepinter.correios.com.br/app/endereco/index.php';
 
@@ -83,7 +84,7 @@ export function EnderecoFields({ values, onChange, errors = {} }: Props) {
         onPress={() => Linking.openURL(CORREIOS_URL)}
         className="-mt-3 mb-3 self-start flex-row items-center"
       >
-        <MaterialIcons name="help-outline" size={14} color="#0D2347" style={{ marginRight: 4 }} />
+        <MaterialIcons name="help-outline" size={14} color={colors.primary} style={{ marginRight: 4 }} />
         <Text className="text-primary text-xs underline">Não sei meu CEP</Text>
       </TouchableOpacity>
 

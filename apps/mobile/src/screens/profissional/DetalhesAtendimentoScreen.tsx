@@ -7,21 +7,23 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useNavigation, useRoute, useFocusEffect, RouteProp } from '@react-navigation/native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { ProfissionalNavProp, ProfissionalStackParamList } from '../../navigation/types';
 import { StatusBadge } from '../../components/StatusBadge';
+import { ScreenHeader } from '../../components/ScreenHeader';
 import { FormFooter } from '../../components/FormFooter';
 import { atendimentosService, Atendimento, AtendimentoFormulario } from '../../services/atendimentos';
 import { avaliacoesService } from '../../services/avaliacoes';
 import { useFeedback } from '../../context/FeedbackContext';
-import { formatProtocolo, formatData, maskCpf } from '../../utils/format';
+import { SituacaoFormulario } from '../../constants/dominio';
+import { colors } from '../../constants/colors';
+import { formatData, maskCpf } from '../../utils/format';
+import { mensagemErroApi } from '../../utils/errors';
 
 type RouteT = RouteProp<ProfissionalStackParamList, 'DetalhesAtendimento'>;
 
 export function DetalhesAtendimentoScreen() {
   const navigation = useNavigation<ProfissionalNavProp>();
-  const insets = useSafeAreaInsets();
   const { toast, confirm } = useFeedback();
   const { id } = useRoute<RouteT>().params;
   const [atendimento, setAtendimento] = useState<Atendimento | null>(null);
@@ -57,15 +59,15 @@ export function DetalhesAtendimentoScreen() {
         nomeFormulario: af.formulario.nome,
         modo: 'avaliar',
       });
-    } catch (err: any) {
-      toast(err?.response?.data?.message ?? 'Não foi possível iniciar a avaliação.', 'error');
+    } catch (err) {
+      toast(mensagemErroApi(err, 'Não foi possível iniciar a avaliação.'), 'error');
     }
   };
 
   if (loading || !atendimento) {
     return (
       <View className="flex-1 bg-white items-center justify-center">
-        <ActivityIndicator color="#0D2347" />
+        <ActivityIndicator color={colors.primary} />
       </View>
     );
   }
@@ -74,15 +76,7 @@ export function DetalhesAtendimentoScreen() {
 
   return (
     <View className="flex-1 bg-white">
-      {/* Header */}
-      <View className="bg-primary px-6" style={{ paddingTop: Math.max(insets.top, 16), paddingBottom: 16 }}>
-        <View className="flex-row items-center gap-3">
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <MaterialIcons name="arrow-back" size={24} color="white" />
-          </TouchableOpacity>
-          <Text className="text-white text-lg font-bold">Detalhes do Atendimento</Text>
-        </View>
-      </View>
+      <ScreenHeader title="Detalhes do Atendimento" onBack={() => navigation.goBack()} />
 
       <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
         {/* Status + protocolo */}
@@ -97,7 +91,7 @@ export function DetalhesAtendimentoScreen() {
         <Text className="text-base font-bold text-primary mb-4">Informações do Atendimento</Text>
 
         <View className="flex-row items-start mb-4">
-          <MaterialIcons name="description" size={22} color="#6B7280" style={{ marginRight: 12, marginTop: 2 }} />
+          <MaterialIcons name="description" size={22} color={colors.gray500} style={{ marginRight: 12, marginTop: 2 }} />
           <View className="flex-1">
             <Text className="text-xs text-muted font-medium mb-0.5">Descrição</Text>
             <Text className="text-sm text-gray-800">{atendimento.descricao ?? '—'}</Text>
@@ -105,7 +99,7 @@ export function DetalhesAtendimentoScreen() {
         </View>
 
         <View className="flex-row items-start mb-4">
-          <MaterialIcons name="person" size={22} color="#6B7280" style={{ marginRight: 12, marginTop: 2 }} />
+          <MaterialIcons name="person" size={22} color={colors.gray500} style={{ marginRight: 12, marginTop: 2 }} />
           <View className="flex-1">
             <Text className="text-xs text-muted font-medium mb-0.5">Paciente</Text>
             <Text className="text-sm text-gray-800 font-medium">{paciente.nome}</Text>
@@ -114,7 +108,7 @@ export function DetalhesAtendimentoScreen() {
         </View>
 
         <View className="flex-row items-start mb-6">
-          <MaterialIcons name="event" size={22} color="#6B7280" style={{ marginRight: 12, marginTop: 2 }} />
+          <MaterialIcons name="event" size={22} color={colors.gray500} style={{ marginRight: 12, marginTop: 2 }} />
           <View className="flex-1">
             <Text className="text-xs text-muted font-medium mb-0.5">Data de criação</Text>
             <Text className="text-sm text-gray-800">{formatData(atendimento.dt_cadastro)}</Text>
@@ -129,11 +123,11 @@ export function DetalhesAtendimentoScreen() {
 
         {atendimento.atendimento_formulario.map((af) => {
           const fp = af.status_formulario_paciente;
-          const situacaoId = fp?.id_situacao_formulario ?? 1;
+          const situacaoId = fp?.id_situacao_formulario ?? SituacaoFormulario.RASCUNHO;
           return (
             <View key={af.id_atendimento_formulario} className="bg-white border border-border rounded-2xl p-4 mb-3" style={{ elevation: 1 }}>
               <View className="flex-row items-start justify-between mb-3">
-                <MaterialIcons name="assignment" size={22} color="#4A5568" style={{ marginRight: 8, marginTop: 2 }} />
+                <MaterialIcons name="assignment" size={22} color={colors.gray600} style={{ marginRight: 8, marginTop: 2 }} />
                 <View className="flex-1 mr-2">
                   <Text className="text-sm font-semibold text-gray-800">{af.formulario.nome}</Text>
                   <Text className="text-xs text-muted mt-0.5" numberOfLines={2}>
@@ -144,8 +138,9 @@ export function DetalhesAtendimentoScreen() {
               </View>
 
               <View className="flex-row gap-2">
-                {/* Avaliar: só enquanto Respondido (2) ou Em avaliação (3). Depois de Avaliado (4), some. */}
-                {(situacaoId === 2 || situacaoId === 3) && (
+                {/* Avaliar: só enquanto Respondido ou Em avaliação. Depois de Avaliado, some. */}
+                {(situacaoId === SituacaoFormulario.RESPONDIDO ||
+                  situacaoId === SituacaoFormulario.EM_AVALIACAO) && (
                   <TouchableOpacity
                     onPress={() => iniciarAvaliacao(af)}
                     className="flex-1 bg-primary/10 rounded-xl py-2 items-center"
@@ -157,7 +152,7 @@ export function DetalhesAtendimentoScreen() {
                   onPress={() => {
                     // Respondido (ou além) → mostra o formulário respondido;
                     // caso contrário, exibe o template com inputs desabilitados.
-                    if (situacaoId >= 2) {
+                    if (situacaoId >= SituacaoFormulario.RESPONDIDO) {
                       navigation.navigate('AvaliarFormulario', {
                         idAtendimento: id,
                         idFormulario: af.id_formulario,

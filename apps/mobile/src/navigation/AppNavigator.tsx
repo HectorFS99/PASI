@@ -6,6 +6,7 @@ import { DrawerProvider } from '../context/DrawerContext';
 import { ProfilePhotoProvider } from '../context/ProfilePhotoContext';
 import { AppDrawer } from '../components/AppDrawer';
 import { ProfissionalStackParamList, PacienteStackParamList } from './types';
+import { TipoUsuario } from '../constants/dominio';
 
 import { AtendimentosListScreen } from '../screens/profissional/AtendimentosListScreen';
 import { NovoAtendimentoScreen } from '../screens/profissional/NovoAtendimentoScreen';
@@ -58,7 +59,7 @@ export function AppNavigator() {
     <ProfilePhotoProvider>
       <DrawerProvider>
         <View style={{ flex: 1 }}>
-          {usuario?.tipo === 1 ? <ProfissionalNavigator /> : <PacienteNavigator />}
+          {usuario?.tipo === TipoUsuario.PROFISSIONAL ? <ProfissionalNavigator /> : <PacienteNavigator />}
           <AppDrawer />
         </View>
       </DrawerProvider>

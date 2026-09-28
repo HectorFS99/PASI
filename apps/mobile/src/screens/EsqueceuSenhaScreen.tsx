@@ -1,21 +1,15 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  Image,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  TouchableOpacity,
-} from 'react-native';
+import { View, Text, Image, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NavigationProp } from '../navigation/types';
 import { MaterialIcons } from '@expo/vector-icons';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { InputField } from '../components/InputField';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { authService } from '../services/auth';
 import { useFeedback } from '../context/FeedbackContext';
 import { isEmailValido } from '../utils/validation';
+import { colors } from '../constants/colors';
 
 export function EsqueceuSenhaScreen() {
   const navigation = useNavigation<NavigationProp>();
@@ -48,19 +42,15 @@ export function EsqueceuSenhaScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView className="flex-1 bg-white" keyboardShouldPersistTaps="handled">
-        {/* Header */}
-        <View className="bg-primary px-6 pt-14 pb-8">
-          <TouchableOpacity onPress={() => navigation.goBack()} className="mb-4 self-start p-1">
-            <MaterialIcons name="arrow-back" size={24} color="white" />
-          </TouchableOpacity>
-          <View className="items-center">
+        <ScreenHeader variant="large" onBack={() => navigation.goBack()}>
+          <View className="items-center pb-4">
             <Image
               source={require('../../assets/logo.png')}
               style={{ width: 130, height: 130 }}
               resizeMode="contain"
             />
           </View>
-        </View>
+        </ScreenHeader>
 
         {/* Body */}
         <View className="px-6 pt-8 pb-10">
@@ -78,7 +68,7 @@ export function EsqueceuSenhaScreen() {
             keyboardType="email-address"
             autoCapitalize="none"
             error={error}
-            leftIcon={<MaterialIcons name="email" size={18} color="#A0AEC0" />}
+            leftIcon={<MaterialIcons name="email" size={18} color={colors.placeholder} />}
           />
 
           <PrimaryButton

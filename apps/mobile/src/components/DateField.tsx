@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Modal } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { maskDataBr, dateParaBr, brParaDate } from '../utils/date';
+import { colors } from '../constants/colors';
 
 const DIAS_SEMANA = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
 const MESES = [
@@ -73,14 +74,14 @@ export function DateField({ label, value, onChange, placeholder = 'dd/mm/aaaa' }
         <TextInput
           className="flex-1 text-sm text-gray-800"
           placeholder={placeholder}
-          placeholderTextColor="#A0AEC0"
+          placeholderTextColor={colors.placeholder}
           value={value}
           onChangeText={(t) => onChange(maskDataBr(t))}
           keyboardType="numeric"
           maxLength={10}
         />
         <TouchableOpacity onPress={abrirCalendario} className="w-9 h-9 items-center justify-center">
-          <MaterialIcons name="calendar-today" size={18} color="#0D2347" />
+          <MaterialIcons name="calendar-today" size={18} color={colors.primary} />
         </TouchableOpacity>
       </View>
 
@@ -95,13 +96,13 @@ export function DateField({ label, value, onChange, placeholder = 'dd/mm/aaaa' }
             {/* Navegação do mês */}
             <View className="flex-row items-center justify-between mb-3">
               <TouchableOpacity onPress={() => mudarMes(-1)} className="w-9 h-9 items-center justify-center">
-                <MaterialIcons name="chevron-left" size={24} color="#0D2347" />
+                <MaterialIcons name="chevron-left" size={24} color={colors.primary} />
               </TouchableOpacity>
               <Text className="text-primary font-bold text-sm">
                 {MESES[mesVisivel.mes]} {mesVisivel.ano}
               </Text>
               <TouchableOpacity onPress={() => mudarMes(1)} className="w-9 h-9 items-center justify-center">
-                <MaterialIcons name="chevron-right" size={24} color="#0D2347" />
+                <MaterialIcons name="chevron-right" size={24} color={colors.primary} />
               </TouchableOpacity>
             </View>
 

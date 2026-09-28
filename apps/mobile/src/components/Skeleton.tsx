@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, View, Platform, ViewStyle } from 'react-native';
+import { colors } from '../constants/colors';
 
 const useNative = Platform.OS !== 'web';
 
@@ -28,7 +29,7 @@ export function Skeleton({ width = '100%', height = 16, radius = 8, style }: Ske
   return (
     <Animated.View
       style={[
-        { width: width as any, height, borderRadius: radius, backgroundColor: '#E2E8F0', opacity },
+        { width: width as any, height, borderRadius: radius, backgroundColor: colors.border, opacity },
         style,
       ]}
     />

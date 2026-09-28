@@ -7,43 +7,45 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ProfissionalNavProp, ProfissionalStackParamList } from '../../navigation/types';
 import { formulariosAdminService, FormularioAdmin, PerguntaAdmin } from '../../services/formularios';
+import { ScreenHeader } from '../../components/ScreenHeader';
 import { FormFooter } from '../../components/FormFooter';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useFeedback } from '../../context/FeedbackContext';
+import { TipoPergunta, TIPOS_COM_OPCOES } from '../../constants/dominio';
+import { colors } from '../../constants/colors';
 import { formatData } from '../../utils/format';
 
 type RouteT = RouteProp<ProfissionalStackParamList, 'DetalhesFormulario'>;
 
 const TIPO_LABELS: Record<number, string> = {
-  1: 'Texto longo',
-  2: 'Número',
-  3: 'Sim/Não',
-  4: 'Seleção única',
-  5: 'Múltipla escolha',
+  [TipoPergunta.TEXTO]: 'Texto longo',
+  [TipoPergunta.NUMERO]: 'Número',
+  [TipoPergunta.BOOLEANO]: 'Sim/Não',
+  [TipoPergunta.ESCOLHA_UNICA]: 'Seleção única',
+  [TipoPergunta.ESCOLHA_MULTIPLA]: 'Múltipla escolha',
 };
 
 const TIPO_COLORS: Record<number, string> = {
-  1: 'bg-blue-50 text-blue-600',
-  2: 'bg-purple-50 text-purple-600',
-  3: 'bg-green-50 text-green-600',
-  4: 'bg-orange-50 text-orange-600',
-  5: 'bg-pink-50 text-pink-600',
+  [TipoPergunta.TEXTO]: 'bg-blue-50 text-blue-600',
+  [TipoPergunta.NUMERO]: 'bg-purple-50 text-purple-600',
+  [TipoPergunta.BOOLEANO]: 'bg-green-50 text-green-600',
+  [TipoPergunta.ESCOLHA_UNICA]: 'bg-orange-50 text-orange-600',
+  [TipoPergunta.ESCOLHA_MULTIPLA]: 'bg-pink-50 text-pink-600',
 };
 
 function PreviewInput({ pergunta }: { pergunta: PerguntaAdmin }) {
   const { id_tipo_pergunta: tipo, valor_minimo, valor_maximo, opcao_pergunta } = pergunta;
 
-  if (tipo === 1) {
+  if (tipo === TipoPergunta.TEXTO) {
     return (
       <View className="bg-gray-50 border border-dashed border-gray-300 rounded-xl px-4 py-3 mt-2">
         <Text className="text-gray-400 text-sm italic">Digite sua resposta...</Text>
       </View>
     );
   }
-  if (tipo === 2) {
+  if (tipo === TipoPergunta.NUMERO) {
     const label =
       valor_minimo !== undefined && valor_maximo !== undefined
         ? `Escala de ${valor_minimo} a ${valor_maximo}`
@@ -54,7 +56,7 @@ function PreviewInput({ pergunta }: { pergunta: PerguntaAdmin }) {
       </View>
     );
   }
-  if (tipo === 3) {
+  if (tipo === TipoPergunta.BOOLEANO) {
     return (
       <View className="flex-row gap-2 mt-2">
         {['Sim', 'Não'].map((label) => (
@@ -65,12 +67,13 @@ function PreviewInput({ pergunta }: { pergunta: PerguntaAdmin }) {
       </View>
     );
   }
-  if (tipo === 4 || tipo === 5) {
+  if (TIPOS_COM_OPCOES.includes(tipo)) {
+    const unica = tipo === TipoPergunta.ESCOLHA_UNICA;
     return (
       <View className="mt-2 gap-1">
         {opcao_pergunta.map((op) => (
           <View key={op.id_opcao} className="flex-row items-center px-3 py-2 border border-dashed border-gray-300 rounded-xl">
-            <View className={`w-4 h-4 ${tipo === 4 ? 'rounded-full' : 'rounded'} border border-gray-300 mr-2`} />
+            <View className={`w-4 h-4 ${unica ? 'rounded-full' : 'rounded'} border border-gray-300 mr-2`} />
             <Text className="text-sm text-gray-600">{op.texto_opcao}</Text>
           </View>
         ))}
@@ -82,7 +85,6 @@ function PreviewInput({ pergunta }: { pergunta: PerguntaAdmin }) {
 
 export function DetalhesFormularioScreen() {
   const navigation = useNavigation<ProfissionalNavProp>();
-  const insets = useSafeAreaInsets();
   const { toast } = useFeedback();
   const { id } = useRoute<RouteT>().params;
   const [formulario, setFormulario] = useState<FormularioAdmin | null>(null);
@@ -105,7 +107,7 @@ export function DetalhesFormularioScreen() {
   if (loading || !formulario) {
     return (
       <View className="flex-1 bg-white items-center justify-center">
-        <ActivityIndicator color="#0D2347" />
+        <ActivityIndicator color={colors.primary} />
       </View>
     );
   }
@@ -115,22 +117,14 @@ export function DetalhesFormularioScreen() {
 
   return (
     <View className="flex-1 bg-white">
-      {/* Header */}
-      <View className="bg-primary px-6" style={{ paddingTop: Math.max(insets.top, 16), paddingBottom: 16 }}>
-        <View className="flex-row items-center gap-3">
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <MaterialIcons name="arrow-back" size={24} color="white" />
-          </TouchableOpacity>
-          <Text className="text-white text-lg font-bold">Visualizar Formulário</Text>
-        </View>
-      </View>
+      <ScreenHeader title="Visualizar Formulário" onBack={() => navigation.goBack()} />
 
       <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
         {/* Card de cabeçalho do formulário */}
         <View className="bg-white border border-border rounded-2xl p-4 mb-5" style={{ elevation: 1 }}>
           <View className="flex-row items-start">
             <View className="w-12 h-12 rounded-xl bg-primary/10 items-center justify-center mr-3">
-              <MaterialIcons name="assignment" size={28} color="#0D2347" />
+              <MaterialIcons name="assignment" size={28} color={colors.primary} />
             </View>
             <View className="flex-1">
               <Text className="text-primary font-bold text-base">{formulario.nome}</Text>

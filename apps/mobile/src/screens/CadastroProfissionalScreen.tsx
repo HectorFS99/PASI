@@ -1,26 +1,24 @@
 import React, { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  TouchableOpacity,
-} from 'react-native';
-import { Picker } from '@react-native-picker/picker';
+import { View, Text, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { NavigationProp } from '../navigation/types';
 import { StepIndicator } from '../components/StepIndicator';
 import { InputField } from '../components/InputField';
+import { SelectField } from '../components/SelectField';
+import { SegmentedControl } from '../components/SegmentedControl';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { FormFooter } from '../components/FormFooter';
 import { authService } from '../services/auth';
 import { apoioService } from '../services/apoio';
 import { useFeedback } from '../context/FeedbackContext';
 import { useScrollToError } from '../hooks/useScrollToError';
+import { SEXO_OPCOES, Sexo } from '../constants/dominio';
+import { colors } from '../constants/colors';
 import { formatCPF, formatTelefone, cleanMask } from '../utils/masks';
-import { isCpfValido, isEmailValido } from '../utils/validation';
+import { isCpfValido, isEmailValido, isSenhaForte, SENHA_MENSAGEM } from '../utils/validation';
+import { mensagemErroApi } from '../utils/errors';
 
 const STEPS = ['Dados', 'Profissão', 'Senha'];
 
@@ -39,6 +37,7 @@ export function CadastroProfissionalScreen() {
   const [cpf, setCpf] = useState('');
   const [email, setEmail] = useState('');
   const [tel, setTel] = useState('');
+  const [sexo, setSexo] = useState<Sexo | null>(null);
 
   // Step 2
   const [profissoes, setProfissoes] = useState<Profissao[]>([]);
@@ -63,9 +62,10 @@ export function CadastroProfissionalScreen() {
     if (!isCpfValido(cpf)) e.cpf = 'CPF inválido';
     if (!isEmailValido(email)) e.email = 'E-mail inválido (ex.: nome@dominio.com)';
     if (cleanMask(tel).length < 10) e.tel = 'Telefone inválido';
+    if (!sexo) e.sexo = 'Selecione o sexo';
     setErrors(e);
     if (Object.keys(e).length > 0) {
-      scrollPara(['nome', 'cpf', 'email', 'tel'].filter((k) => e[k]));
+      scrollPara(['nome', 'cpf', 'email', 'tel', 'sexo'].filter((k) => e[k]));
       return false;
     }
     return true;
@@ -81,7 +81,7 @@ export function CadastroProfissionalScreen() {
 
   const validateStep3 = () => {
     const e: Record<string, string> = {};
-    if (senha.length < 8) e.senha = 'Mínimo 8 caracteres';
+    if (!isSenhaForte(senha)) e.senha = SENHA_MENSAGEM;
     if (senha !== confirmarSenha) e.confirmarSenha = 'As senhas não coincidem';
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -101,16 +101,15 @@ export function CadastroProfissionalScreen() {
         cpf: cleanMask(cpf),
         email: email.toLowerCase().trim(),
         tel_celular: cleanMask(tel),
-        sexo: 'M',
+        sexo: sexo!,
         id_profissao: idProfissao!,
         id_unidade_atendimento: idUnidade!,
         senha,
       });
       toast('Cadastro realizado! Faça login para continuar.', 'success');
       navigation.navigate('Login');
-    } catch (err: any) {
-      const msg = err?.response?.data?.message ?? 'Erro ao cadastrar. Tente novamente.';
-      toast(Array.isArray(msg) ? msg[0] : msg, 'error');
+    } catch (err) {
+      toast(mensagemErroApi(err, 'Erro ao cadastrar. Tente novamente.'), 'error');
     } finally {
       setLoading(false);
     }
@@ -122,14 +121,12 @@ export function CadastroProfissionalScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView ref={scrollRef} className="flex-1 bg-white" keyboardShouldPersistTaps="handled">
-        {/* Header */}
-        <View className="bg-primary px-6 pt-14 pb-4">
-          <TouchableOpacity onPress={() => navigation.goBack()} className="mb-3 self-start p-1">
-            <MaterialIcons name="arrow-back" size={24} color="white" />
-          </TouchableOpacity>
-          <Text className="text-white text-xl font-bold">Cadastro Profissional</Text>
-          <Text className="text-white/70 text-sm">Preencha seus dados para criar sua conta</Text>
-        </View>
+        <ScreenHeader
+          variant="large"
+          title="Cadastro Profissional"
+          subtitle="Preencha seus dados para criar sua conta"
+          onBack={() => navigation.goBack()}
+        />
 
         <StepIndicator steps={STEPS} current={step} />
 
@@ -182,63 +179,40 @@ export function CadastroProfissionalScreen() {
                   error={errors.tel}
                 />
               </View>
+              <View onLayout={registrar('sexo')}>
+                <SegmentedControl
+                  label="Sexo"
+                  options={SEXO_OPCOES}
+                  value={sexo}
+                  onChange={setSexo}
+                  error={errors.sexo}
+                />
+              </View>
             </>
           )}
 
           {step === 2 && (
             <>
-              <Text className="text-sm font-medium text-gray-700 mb-1">Profissão</Text>
-              <View
-                className={`bg-input-bg border rounded-xl mb-1 ${
-                  errors.profissao ? 'border-red-400' : 'border-border'
-                }`}
-              >
-                <Picker
-                  selectedValue={idProfissao}
-                  onValueChange={(v) => setIdProfissao(v)}
-                >
-                  <Picker.Item label="Selecione sua profissão" value={null} />
-                  {profissoes.map((p) => (
-                    <Picker.Item key={p.id_profissao} label={p.nome} value={p.id_profissao} />
-                  ))}
-                </Picker>
-              </View>
-              {errors.profissao ? (
-                <Text className="text-red-500 text-xs mb-4">{errors.profissao}</Text>
-              ) : (
-                <View className="mb-4" />
-              )}
+              <SelectField
+                label="Profissão"
+                placeholder="Selecione sua profissão"
+                value={idProfissao}
+                onChange={setIdProfissao}
+                options={profissoes.map((p) => ({ value: p.id_profissao, label: p.nome }))}
+                error={errors.profissao}
+              />
 
-              <Text className="text-sm font-medium text-gray-700 mb-1">
-                Unidade de atendimento
-              </Text>
-              <View
-                className={`bg-input-bg border rounded-xl mb-1 ${
-                  errors.unidade ? 'border-red-400' : 'border-border'
-                }`}
-              >
-                <Picker
-                  selectedValue={idUnidade}
-                  onValueChange={(v) => setIdUnidade(v)}
-                >
-                  <Picker.Item label="Selecione a unidade" value={null} />
-                  {unidades.map((u) => (
-                    <Picker.Item
-                      key={u.id_unidade_atendimento}
-                      label={u.nome}
-                      value={u.id_unidade_atendimento}
-                    />
-                  ))}
-                </Picker>
-              </View>
-              {errors.unidade ? (
-                <Text className="text-red-500 text-xs mb-4">{errors.unidade}</Text>
-              ) : (
-                <View className="mb-4" />
-              )}
+              <SelectField
+                label="Unidade de atendimento"
+                placeholder="Selecione a unidade"
+                value={idUnidade}
+                onChange={setIdUnidade}
+                options={unidades.map((u) => ({ value: u.id_unidade_atendimento, label: u.nome }))}
+                error={errors.unidade}
+              />
 
               <View className="bg-info-bg border border-info-border rounded-xl p-4 mb-6 flex-row items-start">
-                <MaterialIcons name="info-outline" size={16} color="#2B6CB0" style={{ marginRight: 8, marginTop: 1 }} />
+                <MaterialIcons name="info-outline" size={16} color={colors.infoText} style={{ marginRight: 8, marginTop: 1 }} />
                 <Text className="text-info-text text-xs leading-relaxed flex-1">
                   O ID de Acesso institucional concede privilégios de nível Máximo ou
                   Intermediário conforme sua categoria profissional.

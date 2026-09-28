@@ -16,6 +16,7 @@ import { useDrawer } from '../context/DrawerContext';
 import { useAuth } from '../context/AuthContext';
 import { useProfilePhoto } from '../context/ProfilePhotoContext';
 import { navigate } from '../navigation/navigationRef';
+import { colors } from '../constants/colors';
 
 type IconName = keyof typeof MaterialIcons.glyphMap;
 
@@ -113,7 +114,7 @@ export function AppDrawer() {
         style={{
           width: PANEL_WIDTH,
           height: '100%',
-          backgroundColor: '#fff',
+          backgroundColor: colors.white,
           transform: [{ translateX }],
         }}
       >
@@ -160,7 +161,7 @@ export function AppDrawer() {
               className="flex-row items-center px-5 py-4"
               activeOpacity={0.6}
             >
-              <MaterialIcons name={item.icon} size={22} color="#0D2347" style={{ marginRight: 16 }} />
+              <MaterialIcons name={item.icon} size={22} color={colors.primary} style={{ marginRight: 16 }} />
               <Text className="text-gray-800 text-sm font-medium">{item.label}</Text>
             </TouchableOpacity>
           ))}
@@ -173,7 +174,7 @@ export function AppDrawer() {
             className="flex-row items-center"
             activeOpacity={0.6}
           >
-            <MaterialIcons name="logout" size={22} color="#DC2626" style={{ marginRight: 16 }} />
+            <MaterialIcons name="logout" size={22} color={colors.danger} style={{ marginRight: 16 }} />
             <Text className="text-red-600 text-sm font-medium">Sair</Text>
           </TouchableOpacity>
         </View>

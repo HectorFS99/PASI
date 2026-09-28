@@ -5,13 +5,12 @@ import {
   ScrollView,
   TextInput,
   TouchableOpacity,
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ProfissionalNavProp } from '../../navigation/types';
+import { ScreenHeader } from '../../components/ScreenHeader';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { FormFooter } from '../../components/FormFooter';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -19,10 +18,11 @@ import { atendimentosService, Paciente } from '../../services/atendimentos';
 import { formulariosService, FormularioItem } from '../../services/formularios';
 import { useFeedback } from '../../context/FeedbackContext';
 import { contemTexto } from '../../utils/text';
+import { mensagemErroApi } from '../../utils/errors';
+import { colors } from '../../constants/colors';
 
 export function NovoAtendimentoScreen() {
   const navigation = useNavigation<ProfissionalNavProp>();
-  const insets = useSafeAreaInsets();
   const { toast } = useFeedback();
   const [descricao, setDescricao] = useState('');
   const [pacienteBusca, setPacienteBusca] = useState('');
@@ -86,8 +86,8 @@ export function NovoAtendimentoScreen() {
       });
       toast('Atendimento criado com sucesso!', 'success');
       navigation.goBack();
-    } catch (err: any) {
-      toast(err?.response?.data?.message ?? 'Não foi possível criar o atendimento.', 'error');
+    } catch (err) {
+      toast(mensagemErroApi(err, 'Não foi possível criar o atendimento.'), 'error');
     } finally {
       setLoading(false);
     }
@@ -96,15 +96,7 @@ export function NovoAtendimentoScreen() {
   return (
     <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView className="flex-1 bg-white" keyboardShouldPersistTaps="handled">
-        {/* Header */}
-        <View className="bg-primary px-6" style={{ paddingTop: Math.max(insets.top, 16), paddingBottom: 16 }}>
-          <View className="flex-row items-center gap-3">
-            <TouchableOpacity onPress={() => navigation.goBack()}>
-              <MaterialIcons name="arrow-back" size={24} color="white" />
-            </TouchableOpacity>
-            <Text className="text-white text-lg font-bold">Novo Atendimento</Text>
-          </View>
-        </View>
+        <ScreenHeader title="Novo Atendimento" onBack={() => navigation.goBack()} />
 
         <View className="px-6 pt-6 pb-10">
           {/* Descrição */}
@@ -112,7 +104,7 @@ export function NovoAtendimentoScreen() {
           <TextInput
             className="bg-input-bg border border-border rounded-xl px-4 py-3 text-sm text-gray-800"
             placeholder="Descreva brevemente o motivo do atendimento..."
-            placeholderTextColor="#A0AEC0"
+            placeholderTextColor={colors.placeholder}
             value={descricao}
             onChangeText={setDescricao}
             multiline
@@ -126,7 +118,7 @@ export function NovoAtendimentoScreen() {
           <TextInput
             className="bg-input-bg border border-border rounded-xl px-4 h-12 text-sm text-gray-800 mb-1"
             placeholder="Buscar por nome ou CPF..."
-            placeholderTextColor="#A0AEC0"
+            placeholderTextColor={colors.placeholder}
             value={pacienteBusca}
             onChangeText={buscarPacientes}
           />
@@ -151,7 +143,7 @@ export function NovoAtendimentoScreen() {
           {pacienteSelecionado && !showPacientes && (
             <View className="bg-success-bg border border-success-border rounded-xl px-4 py-2 mb-4 flex-row items-center">
               <View className="flex-row items-center gap-1 flex-1">
-                <MaterialIcons name="check" size={14} color="#276749" />
+                <MaterialIcons name="check" size={14} color={colors.successText} />
                 <Text className="text-success-text text-xs" numberOfLines={1}>
                   {pacienteSelecionado.nome}
                 </Text>
@@ -160,7 +152,7 @@ export function NovoAtendimentoScreen() {
                 onPress={limparPaciente}
                 className="w-6 h-6 items-center justify-center ml-2"
               >
-                <MaterialIcons name="close" size={16} color="#276749" />
+                <MaterialIcons name="close" size={16} color={colors.successText} />
               </TouchableOpacity>
             </View>
           )}
@@ -170,7 +162,7 @@ export function NovoAtendimentoScreen() {
           <TextInput
             className="bg-input-bg border border-border rounded-xl px-4 h-10 text-sm text-gray-800 mb-3"
             placeholder="Buscar formulários..."
-            placeholderTextColor="#A0AEC0"
+            placeholderTextColor={colors.placeholder}
             value={formBusca}
             onChangeText={setFormBusca}
           />

@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { colors } from '../constants/colors';
 
 type ToastType = 'success' | 'error' | 'info';
 
@@ -30,9 +31,9 @@ const FeedbackContext = createContext<FeedbackContextType | null>(null);
 const useNative = Platform.OS !== 'web';
 
 const TOAST_STYLE: Record<ToastType, { bg: string; icon: keyof typeof MaterialIcons.glyphMap }> = {
-  success: { bg: '#16A34A', icon: 'check-circle' },
-  error: { bg: '#DC2626', icon: 'error' },
-  info: { bg: '#0D2347', icon: 'info' },
+  success: { bg: colors.success, icon: 'check-circle' },
+  error: { bg: colors.danger, icon: 'error' },
+  info: { bg: colors.primary, icon: 'info' },
 };
 
 export function FeedbackProvider({ children }: { children: React.ReactNode }) {
@@ -112,7 +113,7 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
               borderRadius: 14,
               maxWidth: 480,
               width: '100%',
-              shadowColor: '#000',
+              shadowColor: colors.black,
               shadowOpacity: 0.15,
               shadowRadius: 8,
               shadowOffset: { width: 0, height: 2 },

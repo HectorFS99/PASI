@@ -7,14 +7,17 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useNavigation, useRoute, useFocusEffect, RouteProp } from '@react-navigation/native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { PacienteNavProp, PacienteStackParamList } from '../../navigation/types';
 import { StatusBadge } from '../../components/StatusBadge';
+import { ScreenHeader } from '../../components/ScreenHeader';
 import { atendimentosService, Atendimento, AtendimentoFormulario } from '../../services/atendimentos';
 import { formulariosService } from '../../services/formularios';
 import { useFeedback } from '../../context/FeedbackContext';
+import { SituacaoFormulario } from '../../constants/dominio';
+import { colors } from '../../constants/colors';
 import { formatProtocolo } from '../../utils/format';
+import { mensagemErroApi } from '../../utils/errors';
 
 type RouteT = RouteProp<PacienteStackParamList, 'FormulariosAtendimento'>;
 type IconName = keyof typeof MaterialIcons.glyphMap;
@@ -29,7 +32,6 @@ function iconeFormulario(nome?: string): IconName {
 
 export function FormulariosAtendimentoScreen() {
   const navigation = useNavigation<PacienteNavProp>();
-  const insets = useSafeAreaInsets();
   const { toast } = useFeedback();
   const { idAtendimento, descricao } = useRoute<RouteT>().params;
   const [atendimento, setAtendimento] = useState<Atendimento | null>(null);
@@ -57,15 +59,15 @@ export function FormulariosAtendimentoScreen() {
         idFormulario: af.id_formulario,
         nomeFormulario: af.formulario.nome ?? 'Formulário',
       });
-    } catch (err: any) {
-      toast(err?.response?.data?.message ?? 'Não foi possível iniciar o formulário.', 'error');
+    } catch (err) {
+      toast(mensagemErroApi(err, 'Não foi possível iniciar o formulário.'), 'error');
     }
   };
 
   if (loading || !atendimento) {
     return (
       <View className="flex-1 bg-white items-center justify-center">
-        <ActivityIndicator color="#0D2347" />
+        <ActivityIndicator color={colors.primary} />
       </View>
     );
   }
@@ -73,27 +75,19 @@ export function FormulariosAtendimentoScreen() {
   const formularios = atendimento.atendimento_formulario;
   const total = formularios.length;
   const respondidos = formularios.filter(
-    (af) => (af.status_formulario_paciente?.id_situacao_formulario ?? 0) >= 2,
+    (af) =>
+      (af.status_formulario_paciente?.id_situacao_formulario ?? 0) >= SituacaoFormulario.RESPONDIDO,
   ).length;
   const pendentes = total - respondidos;
   const progresso = total > 0 ? respondidos / total : 0;
 
   return (
     <View className="flex-1 bg-white">
-      {/* Header */}
-      <View className="bg-primary px-6" style={{ paddingTop: Math.max(insets.top, 16), paddingBottom: 16 }}>
-        <View className="flex-row items-center gap-3">
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <MaterialIcons name="arrow-back" size={24} color="white" />
-          </TouchableOpacity>
-          <View className="flex-1">
-            <Text className="text-white text-lg font-bold">Formulários</Text>
-            <Text className="text-white/70 text-xs">
-              Protocolo {formatProtocolo(idAtendimento, atendimento.dt_cadastro)}
-            </Text>
-          </View>
-        </View>
-      </View>
+      <ScreenHeader
+        title="Formulários"
+        subtitle={`Protocolo ${formatProtocolo(idAtendimento, atendimento.dt_cadastro)}`}
+        onBack={() => navigation.goBack()}
+      />
 
       <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
         {/* Progresso */}
@@ -115,16 +109,17 @@ export function FormulariosAtendimentoScreen() {
 
         {/* Cards de formulários */}
         {formularios.map((af) => {
-          const situacaoId = af.status_formulario_paciente?.id_situacao_formulario ?? 1;
+          const situacaoId =
+            af.status_formulario_paciente?.id_situacao_formulario ?? SituacaoFormulario.RASCUNHO;
           // Respondido ou além (em avaliação / avaliado) = não pode mais responder.
-          const respondido = situacaoId >= 2;
+          const respondido = situacaoId >= SituacaoFormulario.RESPONDIDO;
           const iconName = iconeFormulario(af.formulario.nome);
 
           return (
             <View key={af.id_atendimento_formulario} className="bg-white border border-border rounded-2xl p-4 mb-3" style={{ elevation: 1 }}>
               <View className="flex-row items-center mb-3">
                 <View className="w-12 h-12 rounded-xl bg-primary/10 items-center justify-center mr-3">
-                  <MaterialIcons name={iconName} size={26} color="#0D2347" />
+                  <MaterialIcons name={iconName} size={26} color={colors.primary} />
                 </View>
                 <View className="flex-1">
                   <Text className="text-sm font-semibold text-gray-800">{af.formulario.nome}</Text>

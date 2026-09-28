@@ -8,14 +8,15 @@ import { FeedbackProvider } from './src/context/FeedbackContext';
 import { AuthNavigator } from './src/navigation/AuthNavigator';
 import { AppNavigator } from './src/navigation/AppNavigator';
 import { navigationRef } from './src/navigation/navigationRef';
+import { colors } from './src/constants/colors';
 
 function RootNavigator() {
   const { token, isLoading } = useAuth();
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0D2347' }}>
-        <ActivityIndicator color="#ffffff" size="large" />
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.primary }}>
+        <ActivityIndicator color={colors.white} size="large" />
       </View>
     );
   }

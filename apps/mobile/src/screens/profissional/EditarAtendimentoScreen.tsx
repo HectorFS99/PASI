@@ -11,9 +11,9 @@ import {
   Platform,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ProfissionalNavProp, ProfissionalStackParamList } from '../../navigation/types';
 import { StatusBadge } from '../../components/StatusBadge';
+import { ScreenHeader } from '../../components/ScreenHeader';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { FormFooter } from '../../components/FormFooter';
 import { FormListSkeleton } from '../../components/Skeleton';
@@ -21,14 +21,15 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { atendimentosService, Atendimento } from '../../services/atendimentos';
 import { formulariosService, FormularioItem } from '../../services/formularios';
 import { useFeedback } from '../../context/FeedbackContext';
-import { formatProtocolo } from '../../utils/format';
+import { SituacaoAtendimento, SituacaoFormulario } from '../../constants/dominio';
+import { colors } from '../../constants/colors';
 import { contemTexto } from '../../utils/text';
+import { mensagemErroApi } from '../../utils/errors';
 
 type RouteT = RouteProp<ProfissionalStackParamList, 'EditarAtendimento'>;
 
 export function EditarAtendimentoScreen() {
   const navigation = useNavigation<ProfissionalNavProp>();
-  const insets = useSafeAreaInsets();
   const { toast, confirm } = useFeedback();
   const { id } = useRoute<RouteT>().params;
 
@@ -84,8 +85,8 @@ export function EditarAtendimentoScreen() {
       setModalVisible(false);
       toast('Formulário(s) atribuído(s) com sucesso.', 'success');
       load();
-    } catch (err: any) {
-      toast(err?.response?.data?.message ?? 'Não foi possível atribuir.', 'error');
+    } catch (err) {
+      toast(mensagemErroApi(err, 'Não foi possível atribuir.'), 'error');
     } finally {
       setAdicionando(false);
     }
@@ -103,8 +104,8 @@ export function EditarAtendimentoScreen() {
       await atendimentosService.removerFormulario(id, idForm);
       toast('Formulário removido.', 'success');
       load();
-    } catch (err: any) {
-      toast(err?.response?.data?.message ?? 'Não foi possível remover.', 'error');
+    } catch (err) {
+      toast(mensagemErroApi(err, 'Não foi possível remover.'), 'error');
     }
   };
 
@@ -114,8 +115,8 @@ export function EditarAtendimentoScreen() {
       await atendimentosService.atualizar(id, { descricao: descricao.trim() || undefined });
       toast('Alterações salvas!', 'success');
       navigation.goBack();
-    } catch (err: any) {
-      toast(err?.response?.data?.message ?? 'Não foi possível salvar.', 'error');
+    } catch (err) {
+      toast(mensagemErroApi(err, 'Não foi possível salvar.'), 'error');
     } finally {
       setSaving(false);
     }
@@ -124,28 +125,23 @@ export function EditarAtendimentoScreen() {
   if (loading || !atendimento) {
     return (
       <View className="flex-1 bg-white items-center justify-center">
-        <ActivityIndicator color="#0D2347" />
+        <ActivityIndicator color={colors.primary} />
       </View>
     );
   }
 
-  const isCriado = atendimento.id_situacao_atendimento === 1;
+  const isCriado = atendimento.id_situacao_atendimento === SituacaoAtendimento.CRIADO;
   // Busca local sem sensibilidade a maiúsculas/acentos.
   const formsFiltrados = formDisp.filter((f) => contemTexto(f.nome, formBusca));
 
   return (
     <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView className="flex-1 bg-white" keyboardShouldPersistTaps="handled">
-        {/* Header */}
-        <View className="bg-primary px-6" style={{ paddingTop: Math.max(insets.top, 16), paddingBottom: 16 }}>
-          <View className="flex-row items-center gap-3">
-            <TouchableOpacity onPress={() => navigation.goBack()}>
-              <MaterialIcons name="arrow-back" size={24} color="white" />
-            </TouchableOpacity>
-            <Text className="text-white text-lg font-bold flex-1" numberOfLines={1}>Alterar Atendimento</Text>
-            <StatusBadge status={atendimento.id_situacao_atendimento} tooltip />
-          </View>
-        </View>
+        <ScreenHeader
+          title="Alterar Atendimento"
+          onBack={() => navigation.goBack()}
+          right={<StatusBadge status={atendimento.id_situacao_atendimento} tooltip />}
+        />
 
         <View className="px-6 pt-6 pb-10">
           {/* Descrição */}
@@ -153,7 +149,7 @@ export function EditarAtendimentoScreen() {
           <TextInput
             className="bg-input-bg border border-border rounded-xl px-4 py-3 text-sm text-gray-800"
             placeholder="Descrição do atendimento..."
-            placeholderTextColor="#A0AEC0"
+            placeholderTextColor={colors.placeholder}
             value={descricao}
             onChangeText={setDescricao}
             multiline
@@ -187,7 +183,7 @@ export function EditarAtendimentoScreen() {
 
           {atendimento.atendimento_formulario.map((af) => {
             const fp = af.status_formulario_paciente;
-            const situacaoId = fp?.id_situacao_formulario ?? 1;
+            const situacaoId = fp?.id_situacao_formulario ?? SituacaoFormulario.RASCUNHO;
             return (
               <View key={af.id_atendimento_formulario} className="bg-white border border-border rounded-xl p-4 mb-3">
                 <View className="flex-row items-start justify-between mb-2">
@@ -201,7 +197,7 @@ export function EditarAtendimentoScreen() {
                     <StatusBadge status={situacaoId} variant="formulario" tooltip />
                     {isCriado && (
                       <TouchableOpacity onPress={() => removerFormulario(af.id_formulario)}>
-                        <MaterialIcons name="close" size={18} color="#F87171" />
+                        <MaterialIcons name="close" size={18} color={colors.dangerLight} />
                       </TouchableOpacity>
                     )}
                   </View>
@@ -247,14 +243,14 @@ export function EditarAtendimentoScreen() {
                 <Text className="text-xs text-muted">Selecione formulários para vincular</Text>
               </View>
               <TouchableOpacity onPress={() => setModalVisible(false)}>
-                <MaterialIcons name="close" size={22} color="#9CA3AF" />
+                <MaterialIcons name="close" size={22} color={colors.gray400} />
               </TouchableOpacity>
             </View>
 
             <TextInput
               className="bg-input-bg border border-border rounded-xl px-4 h-10 text-sm mb-3"
               placeholder="Buscar formulários..."
-              placeholderTextColor="#A0AEC0"
+              placeholderTextColor={colors.placeholder}
               value={formBusca}
               onChangeText={setFormBusca}
             />
@@ -281,13 +277,13 @@ export function EditarAtendimentoScreen() {
                       }}
                       className={`flex-row items-center p-3 rounded-xl mb-2 border ${sel ? 'bg-primary/5 border-primary' : 'border-border'}`}
                     >
-                      <MaterialIcons name="assignment" size={22} color="#4A5568" style={{ marginRight: 12 }} />
+                      <MaterialIcons name="assignment" size={22} color={colors.gray600} style={{ marginRight: 12 }} />
                       <View className="flex-1">
                         <Text className="text-xs text-primary font-semibold">{f.tipo_formulario?.nome ?? 'Geral'}</Text>
                         <Text className="text-sm text-gray-800">{f.nome}</Text>
                         <Text className="text-xs text-muted" numberOfLines={1}>{f.descricao}</Text>
                       </View>
-                      {sel && <MaterialIcons name="check" size={18} color="#0D2347" />}
+                      {sel && <MaterialIcons name="check" size={18} color={colors.primary} />}
                     </TouchableOpacity>
                   );
                 })

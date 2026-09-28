@@ -15,6 +15,7 @@ import { PrimaryButton } from '../components/PrimaryButton';
 import { authService } from '../services/auth';
 import { useAuth } from '../context/AuthContext';
 import { useFeedback } from '../context/FeedbackContext';
+import { mensagemErroApi } from '../utils/errors';
 
 export function LoginScreen() {
   const navigation = useNavigation<NavigationProp>();
@@ -46,11 +47,10 @@ export function LoginScreen() {
       });
       // RootNavigator detecta token e navega automaticamente
     } catch (err: any) {
-      const status = err?.response?.status;
       const msg =
-        status === 401
+        err?.response?.status === 401
           ? 'E-mail/CPF ou senha incorretos.'
-          : err?.response?.data?.message ?? 'Não foi possível fazer login. Tente novamente.';
+          : mensagemErroApi(err, 'Não foi possível fazer login. Tente novamente.');
       setErrors({ login: ' ', senha: msg });
       toast(msg, 'error');
     } finally {

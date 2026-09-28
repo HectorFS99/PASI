@@ -1,5 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, Text, ActivityIndicator } from 'react-native';
+import { colors } from '../constants/colors';
 
 interface Props {
   label: string;
@@ -28,7 +29,7 @@ export function PrimaryButton({
       } ${disabled || loading ? 'opacity-50' : ''}`}
     >
       {loading ? (
-        <ActivityIndicator color={isFilled ? '#fff' : '#0D2347'} />
+        <ActivityIndicator color={isFilled ? colors.white : colors.primary} />
       ) : (
         <Text
           className={`font-semibold text-base ${isFilled ? 'text-white' : 'text-primary'}`}
